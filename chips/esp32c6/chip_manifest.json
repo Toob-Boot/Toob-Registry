@@ -1,0 +1,10 @@
+{
+    "name": "esp32c6",
+    "vendor": "esp",
+    "arch": "riscv32",
+    "toolchain": "toolchain-riscv32.cmake",
+    "toolchain_prefix": "riscv32-esp-elf-",
+    "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)",
+    "version": "1.0.0",
+    "min_toob_version": "0.1.0"
+}

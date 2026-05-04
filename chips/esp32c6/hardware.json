@@ -1,0 +1,75 @@
+{
+    "chip_family": "esp32-c6",
+    "flash": {
+        "size": 4194304,
+        "write_alignment": 4,
+        "app_alignment": 65536,
+        "xip_base": "0x42000000",
+        "regions": [
+            {
+                "base": 0,
+                "type": "reserved",
+                "size": 262144,
+                "description": "Derived from scan: skipped"
+            },
+            {
+                "base": 262144,
+                "type": "writable",
+                "sector_size": 4096,
+                "count": 960
+            }
+        ]
+    },
+    "crypto_capabilities": {
+        "hw_aes": true,
+        "hw_ed25519": false,
+        "hw_rng": true,
+        "hw_sha256": true,
+        "pka_present": true,
+        "arena_size": 2048
+    },
+    "watchdogs": [
+        {
+            "address": "0x60008064",
+            "config_addr": "0x60008048",
+            "disable_val": "0x0",
+            "name": "TIMG0_WDT",
+            "unlock_val": "0x50D83AA1"
+        },
+        {
+            "address": "0x60009064",
+            "config_addr": "0x60009048",
+            "disable_val": "0x0",
+            "name": "TIMG1_WDT",
+            "unlock_val": "0x50D83AA1"
+        },
+        {
+            "address": "0x600B0414",
+            "config_addr": "0x600B0400",
+            "disable_val": "0x0",
+            "name": "LP_WDT",
+            "unlock_val": "0x50D83AA1"
+        }
+    ],
+    "multi_core": {
+        "coprocessors": [
+            {
+                "app_alignment_bytes": null,
+                "flash_base": null,
+                "name": "lp_core"
+            }
+        ],
+        "ipc_mechanism": "shared_ram",
+        "is_multi_core": true
+    },
+    "memory": {
+        "ram_base": "0x40800000",
+        "ram_size": "0x8000"
+    },
+    "registers": {
+        "uart0_base": "0x60000000",
+        "uart_sclk_freq": 40000000,
+        "uart_tx_fifo_size": 128,
+        "cpu_freq_hz": 160000000
+    }
+}
