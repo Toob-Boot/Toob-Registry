@@ -21,7 +21,7 @@
  */
 
 #include "chip_config.h"
-#include "boot_config_mock.h"
+#include "generated_boot_config.h"
 #include "arch_riscv.h"
 #include "esp_common.h"
 #include "boot_main.h"
