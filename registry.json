@@ -1,5 +1,7 @@
 {
     "version": 1,
+    "registry_version": "v1.0.0",
+    "core_compatibility": ">=1.0.0",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
