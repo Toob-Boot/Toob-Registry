@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'chips/**'
-      - 'toolchains/**'
-      - 'vendor/**'
-      - 'arch/**'
+      - "chips/**"
+      - "toolchains/**"
+      - "vendor/**"
+      - "arch/**"
 
 permissions:
   contents: write # Needed to commit registry.json and create tags
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
           token: ${{ secrets.BOT_TOKEN || secrets.GITHUB_TOKEN }}
@@ -50,23 +50,23 @@ jobs:
           # Configure Git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Check if registry.json was modified
           if git diff --exit-code registry.json; then
             echo "No changes in registry.json detected."
             exit 0
           fi
-          
+
           # Extract the new version from registry.json
           NEW_VERSION=$(jq -r '.registry_version' registry.json)
-          
+
           echo ">>> Committing registry.json with version $NEW_VERSION"
           git add registry.json vendor/** chips/** arch/** toolchains/**
           git commit -m "chore: auto-generate registry index $NEW_VERSION [skip ci]"
-          
+
           echo ">>> Pushing commit to main..."
           git push origin main
-          
+
           echo ">>> Creating Git Tag $NEW_VERSION..."
           git tag "$NEW_VERSION" || echo "Tag already exists"
           git push origin "$NEW_VERSION" || echo "Push tag skipped"
