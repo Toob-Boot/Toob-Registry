@@ -1,6 +1,6 @@
 {
     "format_version": 1,
-    "registry_version": "v1.0.5",
+    "registry_version": "v1.0.6",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
@@ -24,10 +24,10 @@
                 "windows_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-w64-mingw32.zip"
             },
             "sha256": {
-                "darwin_amd64": "782feefe354500c5f968e8c91959651be3bdbbd7ae8a17affcee2b1bffcaad89",
-                "darwin_arm64": "782feefe354500c5f968e8c91959651be3bdbbd7ae8a17affcee2b1bffcaad89",
+                "darwin_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "darwin_arm64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 "linux_amd64": "782feefe354500c5f968e8c91959651be3bdbbd7ae8a17affcee2b1bffcaad89",
-                "windows_amd64": "782feefe354500c5f968e8c91959651be3bdbbd7ae8a17affcee2b1bffcaad89"
+                "windows_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
             }
         }
     },
