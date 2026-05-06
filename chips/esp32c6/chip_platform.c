@@ -24,7 +24,7 @@
 
 #include "arch_riscv.h"
 #include "esp_common.h"
-#include "../../../crypto/monocypher/crypto_monocypher.h"
+#include "../../../toobloader/crypto/monocypher/crypto_monocypher.h"
 
 #include <stddef.h>
 

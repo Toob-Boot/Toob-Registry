@@ -22,7 +22,9 @@
 /* ========================================================================
  * FLASH GEOMETRY (aggregated_scan.json: 4MB uniform 4KB sectors)
  * ======================================================================== */
+#ifndef CHIP_FLASH_TOTAL_SIZE
 #define CHIP_FLASH_TOTAL_SIZE       (4U * 1024U * 1024U)   /* 0x400000 */
+#endif
 #define CHIP_FLASH_MAX_SECTOR_SIZE  4096U
 #define CHIP_FLASH_WRITE_ALIGNMENT  4U
 #define CHIP_APP_ALIGNMENT_BYTES    65536U
@@ -127,7 +129,9 @@
  * With 2x margin: 90ms. Rounded up to next hardware step: 5000ms
  * for comfortable boot-time coverage.
  * ======================================================================== */
+#ifndef BOOT_WDT_TIMEOUT_MS
 #define BOOT_WDT_TIMEOUT_MS        5000U
+#endif
 
 /* ========================================================================
  * PCR (Peripheral Clock Register) for enabling UART/SYSTIMER clocks

@@ -20,8 +20,8 @@
  *    - WDT kill sequence: Unlock(0x50D83AA1) -> Config=0 -> Lock(0)
  */
 
-#include "chip_config.h"
 #include "generated_boot_config.h"
+#include "chip_config.h"
 #include "arch_riscv.h"
 #include "esp_common.h"
 #include "boot_main.h"

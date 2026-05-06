@@ -12,5 +12,16 @@
             "version": "1.0.0",
             "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)"
         }
+    },
+    "toolchains": {
+        "riscv32-esp-elf": {
+            "version": "13.2.0_20230928",
+            "urls": {
+                "linux_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-linux-gnu.tar.xz",
+                "windows_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-w64-mingw32.zip",
+                "darwin_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-apple-darwin.tar.xz",
+                "darwin_arm64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-apple-darwin.tar.xz"
+            }
+        }
     }
 }
