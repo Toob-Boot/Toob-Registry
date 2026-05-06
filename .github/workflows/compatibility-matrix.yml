@@ -67,12 +67,25 @@ jobs:
           go-version: "1.26.2"
           cache: false
 
-      # In a real environment, we would clone Toob-Loader, build the CLI, and run `toob build --native`
-      - name: Simulate C-Compilation Build
+      - name: Build Toob CLI
+        run: |
+          git clone https://github.com/Toob-Boot/Toob-Loader.git /tmp/Toob-Loader
+          cd /tmp/Toob-Loader/cli/toob-cli
+          go build -o toob
+          sudo mv toob /usr/local/bin/
+
+      - name: Native C-Compilation Build
         run: |
           echo ">>> Spawning Dummy Project for ${{ matrix.chip }}..."
-          echo ">>> Running Native Build..."
-          echo "Build successful!"
+          # Inject PR Registry into local cache so init and build use the modified files
+          mkdir -p ~/.toob/registry
+          cp -r $GITHUB_WORKSPACE/* ~/.toob/registry/
+          
+          toob init dummy-app --chip ${{ matrix.chip }}
+          cd dummy-app
+          
+          export TOOB_COMPILER_DIR=/tmp/Toob-Loader
+          toob build --native
           
       - name: Generate State Hash Artifact
         run: |
