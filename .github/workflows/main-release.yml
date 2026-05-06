@@ -33,7 +33,12 @@ jobs:
       - name: Run SemVer Calculator
         run: |
           echo ">>> Calculating automated Semantic Version bumps..."
-          go run scripts/semver_calc.go
+          BEFORE_SHA="${{ github.event.before }}"
+          CURRENT_SHA="${{ github.sha }}"
+          if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE_SHA="HEAD^"
+          fi
+          go run scripts/semver_calc.go $BEFORE_SHA $CURRENT_SHA
 
       - name: Run Aggregator
         run: |
@@ -57,7 +62,7 @@ jobs:
           
           echo ">>> Committing registry.json with version $NEW_VERSION"
           git add registry.json vendor/** chips/** arch/** toolchains/**
-          git commit -m "chore: auto-generate registry index $NEW_VERSION"
+          git commit -m "chore: auto-generate registry index $NEW_VERSION [skip ci]"
           
           echo ">>> Pushing commit to main..."
           git push origin main
