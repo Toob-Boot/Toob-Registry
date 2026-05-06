@@ -59,6 +59,38 @@ func main() {
 	}
 	newChips := make(map[string]ChipManifest)
 
+	oldToolchains := registry.Toolchains
+	if oldToolchains == nil {
+		oldToolchains = make(map[string]ToolchainEntry)
+	}
+	newToolchains := make(map[string]ToolchainEntry)
+
+	// Walk toolchains directory
+	tcDir := "toolchains"
+	tcEntries, err := os.ReadDir(tcDir)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to read %s directory.", tcDir)
+	}
+
+	for _, entry := range tcEntries {
+		if !entry.IsDir() {
+			continue
+		}
+		tcName := entry.Name()
+		manifestPath := filepath.Join(tcDir, tcName, "toolchain_manifest.json")
+
+		mdata, err := os.ReadFile(manifestPath)
+		if err != nil {
+			continue // No manifest, skip
+		}
+
+		var manifest ToolchainEntry
+		if err := json.Unmarshal(mdata, &manifest); err != nil {
+			log.Fatalf("FATAL: Error parsing %s: %v", manifestPath, err)
+		}
+		newToolchains[tcName] = manifest
+	}
+
 	// Walk chips directory
 	chipsDir := "chips"
 	entries, err := os.ReadDir(chipsDir)
@@ -89,13 +121,13 @@ func main() {
 	}
 
 	// Strict Integrity Checks
-	if registry.Toolchains == nil {
-		log.Fatalf("FATAL: Missing 'toolchains' block in registry.json")
+	if len(newToolchains) == 0 {
+		log.Fatalf("FATAL: Missing toolchains in registry (no toolchain_manifest.json found)")
 	}
 
 	// Crypto-Validation for Toolchains
 	requiredArchs := []string{"linux_amd64", "windows_amd64", "darwin_amd64"}
-	for tcName, tcData := range registry.Toolchains {
+	for tcName, tcData := range newToolchains {
 		for _, arch := range requiredArchs {
 			hash, exists := tcData.Sha256[arch]
 			if !exists || len(hash) != 64 {
@@ -112,14 +144,15 @@ func main() {
 
 		// Verify that the compiler_prefix actually exists in the toolchains dictionary!
 		tcName := strings.TrimSuffix(c.CompilerPrefix, "-")
-		if _, exists := registry.Toolchains[tcName]; !exists {
-			log.Fatalf("FATAL: Chip '%s' references compiler_prefix '%s' (toolchain '%s'), but it is NOT defined in registry.json toolchains block!", chipKey, c.CompilerPrefix, tcName)
+		if _, exists := newToolchains[tcName]; !exists {
+			log.Fatalf("FATAL: Chip '%s' references compiler_prefix '%s' (toolchain '%s'), but it is NOT defined in any toolchain_manifest.json!", chipKey, c.CompilerPrefix, tcName)
 		}
 	}
 
-	changed := !reflect.DeepEqual(oldChips, newChips)
+	changed := !reflect.DeepEqual(oldChips, newChips) || !reflect.DeepEqual(oldToolchains, newToolchains)
 
 	registry.Chips = newChips
+	registry.Toolchains = newToolchains
 
 	if changed {
 		fmt.Println("Changes detected in chips manifests.")
