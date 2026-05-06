@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"crypto/sha256"
+	"encoding/hex"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -22,6 +24,7 @@ type ChipManifest struct {
 	Version            string `json:"version"`
 	CoreCompatibility  string `json:"core_compatibility"`
 	Path               string `json:"path,omitempty"`
+	Verified           bool   `json:"verified"`
 }
 
 type ToolchainEntry struct {
@@ -64,6 +67,20 @@ func main() {
 		oldToolchains = make(map[string]ToolchainEntry)
 	}
 	newToolchains := make(map[string]ToolchainEntry)
+
+	// Read Matrix
+	type HistoryEntry struct {
+		StateHash string `json:"state_hash"`
+		Status    string `json:"status"`
+	}
+	type MatrixChip struct {
+		History []HistoryEntry `json:"history"`
+	}
+	matrixData, _ := os.ReadFile("compatibility_matrix.json")
+	matrix := make(map[string]MatrixChip)
+	if len(matrixData) > 0 {
+		_ = json.Unmarshal(matrixData, &matrix)
+	}
 
 	// Walk toolchains directory
 	tcDir := "toolchains"
@@ -159,6 +176,26 @@ func main() {
 		if _, exists := newToolchains[tcName]; !exists {
 			log.Fatalf("FATAL: Chip '%s' references compiler_prefix '%s' (toolchain '%s'), but it is NOT defined in any toolchain_manifest.json!", chipKey, c.CompilerPrefix, tcName)
 		}
+
+		// Check Matrix Verification Status
+		tc := newToolchains[tcName]
+		cBytes, _ := json.Marshal(c)
+		tBytes, _ := json.Marshal(tc)
+		h := sha256.New()
+		h.Write(cBytes)
+		h.Write(tBytes)
+		stateHash := hex.EncodeToString(h.Sum(nil))
+
+		c.Verified = false
+		if mChip, exists := matrix[chipKey]; exists {
+			for _, hEntry := range mChip.History {
+				if hEntry.StateHash == stateHash && hEntry.Status == "VERIFIED" {
+					c.Verified = true
+					break
+				}
+			}
+		}
+		newChips[chipKey] = c
 	}
 
 	changed := !reflect.DeepEqual(oldChips, newChips) || !reflect.DeepEqual(oldToolchains, newToolchains)
