@@ -1,12 +1,1 @@
-{
-  "esp32c6": {
-    "current_hash": "ff84315dd3c496f81b10751c197e7251f4c384942b8252ba1734745e48f92a0c",
-    "history": [
-      {
-        "state_hash": "ff84315dd3c496f81b10751c197e7251f4c384942b8252ba1734745e48f92a0c",
-        "status": "VERIFIED",
-        "timestamp": "2026-05-06T16:11:42Z"
-      }
-    ]
-  }
-}
+{}

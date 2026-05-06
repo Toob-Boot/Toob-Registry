@@ -22,7 +22,6 @@ type ChipManifest struct {
 	CompilerPrefix   string `json:"compiler_prefix"`
 	Description      string `json:"description"`
 	Version          string `json:"version"`
-	CliCompatibility string `json:"cli_compatibility"`
 	Path             string `json:"path,omitempty"`
 	Verified         bool   `json:"verified"`
 }
@@ -51,7 +50,6 @@ type ArchEntry struct {
 type Registry struct {
 	FormatVersion    int                       `json:"format_version"`
 	RegistryVersion  string                    `json:"registry_version"`
-	CliCompatibility string                    `json:"cli_compatibility"`
 	Chips            map[string]ChipManifest   `json:"chips"`
 	Toolchains       map[string]ToolchainEntry `json:"toolchains"`
 	Vendors          map[string]VendorEntry    `json:"vendors"`

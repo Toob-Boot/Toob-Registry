@@ -49,14 +49,14 @@ jobs:
           echo "matrix=$QUEUE" >> $GITHUB_OUTPUT
 
   test:
-    name: Test Chip ${{ matrix.chip }}
+    name: Test Chip ${{ matrix.target.chip }} @ ${{ matrix.target.cli }}
     needs: generate
     if: ${{ needs.generate.outputs.matrix != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        chip: ${{ fromJson(needs.generate.outputs.matrix) }}
+        target: ${{ fromJson(needs.generate.outputs.matrix) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
@@ -83,9 +83,9 @@ jobs:
           git clone https://github.com/Toob-Boot/Toob-Loader.git /tmp/Toob-Loader
           cd /tmp/Toob-Loader
           
-          CLI_VER=$(jq -r '.cli_compatibility' $GITHUB_WORKSPACE/registry.json)
-          if [ "$CLI_VER" != "null" ] && [ "$CLI_VER" != "" ]; then
-            echo "Checking out Toob-Loader cli_compatibility version: $CLI_VER"
+          CLI_VER="${{ matrix.target.cli }}"
+          if [ "$CLI_VER" != "main" ] && [ "$CLI_VER" != "" ]; then
+            echo "Checking out Toob-Loader cli version: $CLI_VER"
             git checkout $CLI_VER || echo "Warning: Tag $CLI_VER not found, using main"
           fi
           
@@ -102,35 +102,44 @@ jobs:
 
       - name: Native C-Compilation Build
         run: |
-          echo ">>> Spawning Dummy Project for ${{ matrix.chip }}..."
+          echo ">>> Spawning Dummy Project for ${{ matrix.target.chip }} (CLI: ${{ matrix.target.cli }})..."
           # Inject PR Registry into local cache so init and build use the modified files
           mkdir -p ~/.toob/registry
           cp -a $GITHUB_WORKSPACE/. ~/.toob/registry/
           
-          toob init dummy-app --chip ${{ matrix.chip }}
+          toob init dummy-app --chip ${{ matrix.target.chip }}
           cd dummy-app
           
           export TOOB_COMPILER_DIR=/tmp/Toob-Loader
           toob build --native
           
-      - name: Generate State Hash Artifact
+      - name: Generate Result Artifact
+        if: always()
         run: |
           # Re-calculate state hash for this specific chip
           go run scripts/matrix_generator.go > /dev/null # Ensure deps
-          HASH=$(env CHIP=${{ matrix.chip }} go run scripts/matrix_generator.go || echo "dummyhash")
+          HASH=$(env CHIP=${{ matrix.target.chip }} go run scripts/matrix_generator.go || echo "dummyhash")
+          
+          # Determine Status
+          STATUS="FAILED"
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS="VERIFIED"
+          fi
+          
           # Save result
-          echo "{\"chip\":\"${{ matrix.chip }}\", \"status\":\"VERIFIED\", \"state_hash\":\"$HASH\"}" > result_${{ matrix.chip }}.json
+          echo "{\"chip\":\"${{ matrix.target.chip }}\", \"cli_version\":\"${{ matrix.target.cli }}\", \"status\":\"$STATUS\", \"state_hash\":\"$HASH\"}" > result_${{ matrix.target.chip }}_${{ matrix.target.cli }}.json
 
       - name: Upload Artifact
+        if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: result-${{ matrix.chip }}
-          path: result_${{ matrix.chip }}.json
+          name: result-${{ matrix.target.chip }}-${{ matrix.target.cli }}
+          path: result_${{ matrix.target.chip }}_${{ matrix.target.cli }}.json
 
   update-ledger:
     name: Update Matrix Ledger
     needs: [generate, test]
-    if: always() && needs.generate.outputs.matrix != '[]' && needs.test.result == 'success'
+    if: always() && needs.generate.outputs.matrix != '[]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

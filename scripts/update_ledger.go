@@ -10,22 +10,25 @@ import (
 )
 
 type HistoryEntry struct {
-	StateHash string `json:"state_hash"`
-	Status    string `json:"status"`
-	Timestamp string `json:"timestamp"`
+	CliVersion   string `json:"cli_version"`
+	HardwareHash string `json:"hardware_hash"`
+	Status       string `json:"status"`
+	Timestamp    string `json:"timestamp"`
 }
 
 type MatrixChip struct {
-	CurrentHash string         `json:"current_hash"`
-	History     []HistoryEntry `json:"history"`
+	CurrentHardwareHash string            `json:"current_hardware_hash"`
+	VerifiedCliVersions map[string]string `json:"verified_cli_versions"`
+	History             []HistoryEntry    `json:"history"`
 }
 
 type Matrix map[string]MatrixChip
 
 type Result struct {
-	Chip      string `json:"chip"`
-	Status    string `json:"status"`
-	StateHash string `json:"state_hash"`
+	Chip         string `json:"chip"`
+	CliVersion   string `json:"cli_version"`
+	Status       string `json:"status"`
+	StateHash    string `json:"state_hash"`
 }
 
 func main() {
@@ -70,21 +73,28 @@ func main() {
 			continue
 		}
 
-		if res.Chip == "" || res.StateHash == "" {
+		if res.Chip == "" || res.StateHash == "" || res.CliVersion == "" {
 			continue
 		}
 
 		chipEntry, exists := matrix[res.Chip]
-		if !exists {
+		if !exists || chipEntry.CurrentHardwareHash != res.StateHash {
+			// Hash changed or new chip. Reset the verified map!
 			chipEntry = MatrixChip{
-				History: []HistoryEntry{},
+				CurrentHardwareHash: res.StateHash,
+				VerifiedCliVersions: make(map[string]string),
+				History:             []HistoryEntry{},
+			}
+			if exists {
+				// keep old history
+				chipEntry.History = matrix[res.Chip].History
 			}
 		}
 
-		// Check if hash already in history
+		// Check if exact same historical run is already recorded to avoid duplicate entries
 		alreadyExists := false
 		for _, h := range chipEntry.History {
-			if h.StateHash == res.StateHash && h.Status == res.Status {
+			if h.HardwareHash == res.StateHash && h.CliVersion == res.CliVersion && h.Status == res.Status {
 				alreadyExists = true
 				break
 			}
@@ -92,14 +102,16 @@ func main() {
 
 		if !alreadyExists {
 			chipEntry.History = append(chipEntry.History, HistoryEntry{
-				StateHash: res.StateHash,
-				Status:    res.Status,
-				Timestamp: timestamp,
+				HardwareHash: res.StateHash,
+				CliVersion:   res.CliVersion,
+				Status:       res.Status,
+				Timestamp:    timestamp,
 			})
-			chipEntry.CurrentHash = res.StateHash
+			
+			chipEntry.VerifiedCliVersions[res.CliVersion] = res.Status
 			matrix[res.Chip] = chipEntry
 			updated = true
-			fmt.Printf("Appended new state for chip %s (Hash: %s) to ledger.\n", res.Chip, res.StateHash)
+			fmt.Printf("Appended new state for chip %s @ CLI %s (Status: %s) to ledger.\n", res.Chip, res.CliVersion, res.Status)
 		}
 	}
 

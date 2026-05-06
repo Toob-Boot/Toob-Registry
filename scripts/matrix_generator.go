@@ -5,19 +5,20 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 )
 
 type ChipManifest struct {
-	Name               string `json:"name"`
-	Vendor             string `json:"vendor"`
-	Arch               string `json:"arch"`
-	CompilerPrefix     string `json:"compiler_prefix"`
-	Description        string `json:"description"`
-	Version            string `json:"version"`
-	CliCompatibility   string `json:"cli_compatibility"`
-	Path               string `json:"path,omitempty"`
+	Name           string `json:"name"`
+	Vendor         string `json:"vendor"`
+	Arch           string `json:"arch"`
+	CompilerPrefix string `json:"compiler_prefix"`
+	Description    string `json:"description"`
+	Version        string `json:"version"`
+	Path           string `json:"path,omitempty"`
 }
 
 type ToolchainEntry struct {
@@ -46,17 +47,62 @@ type Registry struct {
 }
 
 type HistoryEntry struct {
-	StateHash string `json:"state_hash"`
-	Status    string `json:"status"`
-	Timestamp string `json:"timestamp"`
+	CliVersion   string `json:"cli_version"`
+	HardwareHash string `json:"hardware_hash"`
+	Status       string `json:"status"`
+	Timestamp    string `json:"timestamp"`
 }
 
 type MatrixChip struct {
-	CurrentHash string         `json:"current_hash"`
-	History     []HistoryEntry `json:"history"`
+	CurrentHardwareHash string            `json:"current_hardware_hash"`
+	VerifiedCliVersions map[string]string `json:"verified_cli_versions"`
+	History             []HistoryEntry    `json:"history"`
 }
 
 type Matrix map[string]MatrixChip
+
+type Target struct {
+	Chip string `json:"chip"`
+	Cli  string `json:"cli"`
+}
+
+// getActiveCliVersions fetches tags from GitHub. Fallbacks to main.
+func getActiveCliVersions() []string {
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/Toob-Boot/Toob-Loader/tags", nil)
+	if err != nil {
+		return []string{"main"}
+	}
+	req.Header.Set("User-Agent", "Toob-Registry-Matrix-Generator")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return []string{"main"}
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var tags []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(body, &tags); err != nil {
+		return []string{"main"}
+	}
+
+	var versions []string
+	for _, t := range tags {
+		versions = append(versions, t.Name)
+	}
+	// Always append main as the bleeding edge test
+	versions = append(versions, "main")
+
+	if len(versions) == 0 {
+		return []string{"main"}
+	}
+	return versions
+}
 
 func main() {
 	regData, err := os.ReadFile("registry.json")
@@ -84,7 +130,8 @@ func main() {
 	}
 
 	targetChip := os.Getenv("CHIP")
-	testQueue := []string{}
+	cliVersions := getActiveCliVersions()
+	var testQueue []Target
 
 	for chipKey, chip := range registry.Chips {
 		tcName := chip.CompilerPrefix
@@ -94,10 +141,10 @@ func main() {
 		
 		toolchain, exists := registry.Toolchains[tcName]
 		if !exists {
-			continue // Should be caught by build_registry.go anyway
+			continue
 		}
 
-		// Hash chip + toolchain + vendor + arch
+		// Calculate pristine Hardware Hash (WITHOUT CLI version)
 		vManifest := registry.Vendors[chip.Vendor]
 		aManifest := registry.Archs[chip.Arch]
 		
@@ -111,26 +158,33 @@ func main() {
 		h.Write(tcBytes)
 		h.Write(vBytes)
 		h.Write(aBytes)
-		stateHash := hex.EncodeToString(h.Sum(nil))
+		hardwareHash := hex.EncodeToString(h.Sum(nil))
 
-		if os.Getenv("CHIP") == chipKey {
-			fmt.Print(stateHash)
+		// If called with specific CHIP, just output its hash and exit
+		if targetChip == chipKey {
+			fmt.Print(hardwareHash)
 			os.Exit(0)
 		}
 
-		needsTest := true
+		// Calculate T - A (Target minus Actual)
 		matrixEntry, exists := matrix[chipKey]
-		if exists {
-			for _, hEntry := range matrixEntry.History {
-				if hEntry.StateHash == stateHash && hEntry.Status == "VERIFIED" {
-					needsTest = false
-					break
-				}
-			}
+		var verifiedMap map[string]string
+		
+		if exists && matrixEntry.CurrentHardwareHash == hardwareHash {
+			verifiedMap = matrixEntry.VerifiedCliVersions
+		} else {
+			// Hash changed (or new chip), reset verified map
+			verifiedMap = make(map[string]string)
 		}
 
-		if needsTest {
-			testQueue = append(testQueue, chipKey)
+		// Compare Cartesian Product
+		for _, cli := range cliVersions {
+			if verifiedMap[cli] != "VERIFIED" {
+				testQueue = append(testQueue, Target{
+					Chip: chipKey,
+					Cli:  cli,
+				})
+			}
 		}
 	}
 
