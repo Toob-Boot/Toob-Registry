@@ -46,17 +46,21 @@ type Registry struct {
 	Archs      map[string]ArchEntry      `json:"archs"`
 }
 
-type HistoryEntry struct {
-	CliVersion   string `json:"cli_version"`
-	HardwareHash string `json:"hardware_hash"`
-	Status       string `json:"status"`
-	Timestamp    string `json:"timestamp"`
+type Dependencies struct {
+	Toolchain string `json:"toolchain"`
+	Vendor    string `json:"vendor"`
+	Arch      string `json:"arch"`
+}
+
+type VerifiedCli struct {
+	Status     string `json:"status"`
+	LastTested string `json:"last_tested"`
 }
 
 type MatrixVersion struct {
-	HardwareHash        string            `json:"hardware_hash"`
-	VerifiedCliVersions map[string]string `json:"verified_cli_versions"`
-	History             []HistoryEntry    `json:"history"`
+	EnvironmentHash     string                 `json:"environment_hash"`
+	Dependencies        Dependencies           `json:"dependencies"`
+	VerifiedCliVersions map[string]VerifiedCli `json:"verified_cli_versions"`
 }
 
 type MatrixChip struct {
@@ -172,21 +176,21 @@ func main() {
 
 		// Calculate T - A (Target minus Actual)
 		matrixEntry, chipExists := matrix[chipKey]
-		var verifiedMap map[string]string
+		var verifiedMap map[string]VerifiedCli
 		
 		if chipExists {
-			if versionEntry, versionExists := matrixEntry.Versions[chip.Version]; versionExists && versionEntry.HardwareHash == hardwareHash {
+			if versionEntry, versionExists := matrixEntry.Versions[chip.Version]; versionExists && versionEntry.EnvironmentHash == hardwareHash {
 				verifiedMap = versionEntry.VerifiedCliVersions
 			} else {
-				verifiedMap = make(map[string]string)
+				verifiedMap = make(map[string]VerifiedCli)
 			}
 		} else {
-			verifiedMap = make(map[string]string)
+			verifiedMap = make(map[string]VerifiedCli)
 		}
 
 		// Compare Cartesian Product
 		for _, cli := range cliVersions {
-			if verifiedMap[cli] != "VERIFIED" {
+			if verifiedMap[cli].Status != "VERIFIED" {
 				testQueue = append(testQueue, Target{
 					Chip: chipKey,
 					Cli:  cli,

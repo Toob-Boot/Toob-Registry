@@ -9,17 +9,21 @@ import (
 	"time"
 )
 
-type HistoryEntry struct {
-	CliVersion   string `json:"cli_version"`
-	HardwareHash string `json:"hardware_hash"`
-	Status       string `json:"status"`
-	Timestamp    string `json:"timestamp"`
+type Dependencies struct {
+	Toolchain string `json:"toolchain"`
+	Vendor    string `json:"vendor"`
+	Arch      string `json:"arch"`
+}
+
+type VerifiedCli struct {
+	Status     string `json:"status"`
+	LastTested string `json:"last_tested"`
 }
 
 type MatrixVersion struct {
-	HardwareHash        string            `json:"hardware_hash"`
-	VerifiedCliVersions map[string]string `json:"verified_cli_versions"`
-	History             []HistoryEntry    `json:"history"`
+	EnvironmentHash     string                 `json:"environment_hash"`
+	Dependencies        Dependencies           `json:"dependencies"`
+	VerifiedCliVersions map[string]VerifiedCli `json:"verified_cli_versions"`
 }
 
 type MatrixChip struct {
@@ -95,47 +99,64 @@ func main() {
 		}
 		var reg struct {
 			Chips map[string]struct {
-				Version string `json:"version"`
+				Version        string `json:"version"`
+				Vendor         string `json:"vendor"`
+				Arch           string `json:"arch"`
+				CompilerPrefix string `json:"compiler_prefix"`
 			} `json:"chips"`
+			Toolchains map[string]struct{ Version string `json:"version"` } `json:"toolchains"`
+			Vendors    map[string]struct{ Version string `json:"version"` } `json:"vendors"`
+			Archs      map[string]struct{ Version string `json:"version"` } `json:"archs"`
 		}
 		if err := json.Unmarshal(regData, &reg); err != nil {
 			log.Fatalf("FATAL: Error parsing registry: %v", err)
 		}
 
 		chipManifestVer := "1.0.0"
+		var chipMetaDeps Dependencies
+		
 		if chipMeta, ok := reg.Chips[res.Chip]; ok {
 			chipManifestVer = chipMeta.Version
+			
+			// Resolve dependencies from registry
+			tcName := chipMeta.CompilerPrefix
+			if len(tcName) > 0 && tcName[len(tcName)-1] == '-' {
+				tcName = tcName[:len(tcName)-1]
+			}
+			
+			tcVer := "unknown"
+			if tc, ok := reg.Toolchains[tcName]; ok { tcVer = tc.Version }
+			
+			vVer := "unknown"
+			if v, ok := reg.Vendors[chipMeta.Vendor]; ok { vVer = v.Version }
+			
+			aVer := "unknown"
+			if a, ok := reg.Archs[chipMeta.Arch]; ok { aVer = a.Version }
+			
+			chipMetaDeps = Dependencies{
+				Toolchain: fmt.Sprintf("%s@%s", tcName, tcVer),
+				Vendor:    fmt.Sprintf("%s@%s", chipMeta.Vendor, vVer),
+				Arch:      fmt.Sprintf("%s@%s", chipMeta.Arch, aVer),
+			}
 		}
 
 		versionEntry, versionExists := chipEntry.Versions[chipManifestVer]
-		if !versionExists || versionEntry.HardwareHash != res.StateHash {
+		if !versionExists || versionEntry.EnvironmentHash != res.StateHash {
 			versionEntry = MatrixVersion{
-				HardwareHash:        res.StateHash,
-				VerifiedCliVersions: make(map[string]string),
-				History:             []HistoryEntry{},
-			}
-			if versionExists {
-				versionEntry.History = chipEntry.Versions[chipManifestVer].History
+				EnvironmentHash:     res.StateHash,
+				Dependencies:        chipMetaDeps,
+				VerifiedCliVersions: make(map[string]VerifiedCli),
 			}
 		}
 
-		alreadyExists := false
-		for _, h := range versionEntry.History {
-			if h.HardwareHash == res.StateHash && h.CliVersion == res.CliVersion && h.Status == res.Status {
-				alreadyExists = true
-				break
+		// Update or insert current status
+		currentCli, cliExists := versionEntry.VerifiedCliVersions[res.CliVersion]
+		if !cliExists || currentCli.Status != res.Status {
+			versionEntry.VerifiedCliVersions[res.CliVersion] = VerifiedCli{
+				Status:     res.Status,
+				LastTested: timestamp,
 			}
-		}
-
-		if !alreadyExists {
-			versionEntry.History = append(versionEntry.History, HistoryEntry{
-				HardwareHash: res.StateHash,
-				CliVersion:   res.CliVersion,
-				Status:       res.Status,
-				Timestamp:    timestamp,
-			})
 			
-			versionEntry.VerifiedCliVersions[res.CliVersion] = res.Status
 			if chipEntry.Versions == nil {
 				chipEntry.Versions = make(map[string]MatrixVersion)
 			}

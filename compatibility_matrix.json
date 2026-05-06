@@ -2,39 +2,40 @@
   "esp32c6": {
     "versions": {
       "1.0.0": {
-        "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
-        "verified_cli_versions": {
-          "main": "VERIFIED",
-          "v1.0.1": "VERIFIED"
+        "environment_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
+        "dependencies": {
+          "toolchain": "riscv32-esp-elf@1.0.0",
+          "vendor": "esp@1.0.0",
+          "arch": "riscv32@1.0.0"
         },
-        "history": [
-          {
-            "cli_version": "main",
-            "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
+        "verified_cli_versions": {
+          "main": {
             "status": "VERIFIED",
-            "timestamp": "2026-05-06T17:20:39Z"
+            "last_tested": "2026-05-06T17:20:39Z"
           },
-          {
-            "cli_version": "v1.0.1",
-            "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
+          "v1.0.1": {
             "status": "VERIFIED",
-            "timestamp": "2026-05-06T17:20:39Z"
+            "last_tested": "2026-05-06T17:20:39Z"
           }
-        ]
+        }
       },
       "1.1.0": {
-        "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
-        "verified_cli_versions": {
-          "main": "VERIFIED"
+        "environment_hash": "b4cb1fa2a5239ed51b2cdb6bd5ef98b049adf45a1ddb5ae8fae5bcb161bf66e7",
+        "dependencies": {
+          "toolchain": "riscv32-esp-elf@1.0.0",
+          "vendor": "esp@1.0.0",
+          "arch": "riscv32@1.0.0"
         },
-        "history": [
-          {
-            "cli_version": "main",
-            "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
+        "verified_cli_versions": {
+          "main": {
             "status": "VERIFIED",
-            "timestamp": "2026-05-06T18:05:00Z"
+            "last_tested": "2026-05-06T18:05:00Z"
+          },
+          "v1.0.1": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-06T18:26:31Z"
           }
-        ]
+        }
       }
     }
   }
