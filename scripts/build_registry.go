@@ -27,6 +27,7 @@ type ChipManifest struct {
 }
 
 type ToolchainEntry struct {
+	Path    string            `json:"path"`
 	Version string            `json:"version"`
 	Urls    map[string]string `json:"urls"`
 	Sha256  map[string]string `json:"sha256"`
@@ -34,12 +35,14 @@ type ToolchainEntry struct {
 
 type VendorEntry struct {
 	Name        string `json:"name"`
+	Path        string `json:"path"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
 }
 
 type ArchEntry struct {
 	Name        string `json:"name"`
+	Path        string `json:"path"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
 }
@@ -130,6 +133,7 @@ func main() {
 		if err := json.Unmarshal(mdata, &manifest); err != nil {
 			log.Fatalf("FATAL: Error parsing %s: %v", manifestPath, err)
 		}
+		manifest.Path = filepath.ToSlash(filepath.Join(tcDir, tcName))
 		newToolchains[tcName] = manifest
 	}
 
@@ -154,6 +158,7 @@ func main() {
 			if manifest.Name == "" || manifest.Version == "" {
 				log.Fatalf("FATAL: Vendor manifest '%s' is missing 'name' or 'version'", vPath)
 			}
+			manifest.Path = filepath.ToSlash(filepath.Join(vendorDir, vName))
 			newVendors[vName] = manifest
 		}
 	}
@@ -179,6 +184,7 @@ func main() {
 			if manifest.Name == "" || manifest.Version == "" {
 				log.Fatalf("FATAL: Arch manifest '%s' is missing 'name' or 'version'", aPath)
 			}
+			manifest.Path = filepath.ToSlash(filepath.Join(archDir, aName))
 			newArchs[aName] = manifest
 		}
 	}

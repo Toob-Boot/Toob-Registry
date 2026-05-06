@@ -1,6 +1,6 @@
 {
     "format_version": 1,
-    "registry_version": "v1.0.2",
+    "registry_version": "v1.0.3",
     "core_compatibility": "\u003e=1.0.0",
     "chips": {
         "esp32c6": {
@@ -17,6 +17,7 @@
     },
     "toolchains": {
         "riscv32-esp-elf": {
+            "path": "toolchains/riscv32-esp-elf",
             "version": "13.2.0_20230928",
             "urls": {
                 "darwin_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-apple-darwin.tar.xz",
@@ -35,6 +36,7 @@
     "vendors": {
         "esp": {
             "name": "Espressif",
+            "path": "vendor/esp",
             "version": "1.0.0",
             "description": "Hardware Abstraction Layer for Espressif Devices"
         }
@@ -42,6 +44,7 @@
     "archs": {
         "riscv32": {
             "name": "riscv32",
+            "path": "arch/riscv32",
             "version": "1.0.0",
             "description": "RISC-V 32-bit Architecture Support"
         }
