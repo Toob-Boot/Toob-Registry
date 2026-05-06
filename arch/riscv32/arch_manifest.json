@@ -1,0 +1,5 @@
+{
+  "name": "riscv32",
+  "version": "1.0.0",
+  "description": "RISC-V 32-bit Architecture Support"
+}

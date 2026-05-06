@@ -18,7 +18,6 @@ type ChipManifest struct {
 	Name               string `json:"name"`
 	Vendor             string `json:"vendor"`
 	Arch               string `json:"arch"`
-	CMakeToolchainFile string `json:"cmake_toolchain_file"`
 	CompilerPrefix     string `json:"compiler_prefix"`
 	Description        string `json:"description"`
 	Version            string `json:"version"`
@@ -33,12 +32,26 @@ type ToolchainEntry struct {
 	Sha256  map[string]string `json:"sha256"`
 }
 
+type VendorEntry struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+}
+
+type ArchEntry struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+}
+
 type Registry struct {
 	FormatVersion     int                       `json:"format_version"`
 	RegistryVersion   string                    `json:"registry_version"`
 	CoreCompatibility string                    `json:"core_compatibility"`
 	Chips             map[string]ChipManifest   `json:"chips"`
 	Toolchains        map[string]ToolchainEntry `json:"toolchains"`
+	Vendors           map[string]VendorEntry    `json:"vendors"`
+	Archs             map[string]ArchEntry      `json:"archs"`
 }
 
 func main() {
@@ -67,6 +80,18 @@ func main() {
 		oldToolchains = make(map[string]ToolchainEntry)
 	}
 	newToolchains := make(map[string]ToolchainEntry)
+
+	oldVendors := registry.Vendors
+	if oldVendors == nil {
+		oldVendors = make(map[string]VendorEntry)
+	}
+	newVendors := make(map[string]VendorEntry)
+
+	oldArchs := registry.Archs
+	if oldArchs == nil {
+		oldArchs = make(map[string]ArchEntry)
+	}
+	newArchs := make(map[string]ArchEntry)
 
 	// Read Matrix
 	type HistoryEntry struct {
@@ -106,6 +131,50 @@ func main() {
 			log.Fatalf("FATAL: Error parsing %s: %v", manifestPath, err)
 		}
 		newToolchains[tcName] = manifest
+	}
+
+	// Walk vendors directory
+	vendorDir := "vendor"
+	vEntries, err := os.ReadDir(vendorDir)
+	if err == nil {
+		for _, entry := range vEntries {
+			if !entry.IsDir() {
+				continue
+			}
+			vName := entry.Name()
+			vPath := filepath.Join(vendorDir, vName, "vendor_manifest.json")
+			mdata, err := os.ReadFile(vPath)
+			if err != nil {
+				continue
+			}
+			var manifest VendorEntry
+			if err := json.Unmarshal(mdata, &manifest); err != nil {
+				log.Fatalf("FATAL: Error parsing %s: %v", vPath, err)
+			}
+			newVendors[vName] = manifest
+		}
+	}
+
+	// Walk archs directory
+	archDir := "arch"
+	aEntries, err := os.ReadDir(archDir)
+	if err == nil {
+		for _, entry := range aEntries {
+			if !entry.IsDir() {
+				continue
+			}
+			aName := entry.Name()
+			aPath := filepath.Join(archDir, aName, "arch_manifest.json")
+			mdata, err := os.ReadFile(aPath)
+			if err != nil {
+				continue
+			}
+			var manifest ArchEntry
+			if err := json.Unmarshal(mdata, &manifest); err != nil {
+				log.Fatalf("FATAL: Error parsing %s: %v", aPath, err)
+			}
+			newArchs[aName] = manifest
+		}
 	}
 
 	// Walk chips directory
@@ -155,7 +224,7 @@ func main() {
 
 	// Validate chips
 	for chipKey, c := range newChips {
-		if c.Name == "" || c.Vendor == "" || c.Arch == "" || c.CMakeToolchainFile == "" || c.CompilerPrefix == "" {
+		if c.Name == "" || c.Vendor == "" || c.Arch == "" || c.CompilerPrefix == "" {
 			log.Fatalf("FATAL: Chip '%s' is missing required fields.", chipKey)
 		}
 
@@ -179,11 +248,19 @@ func main() {
 
 		// Check Matrix Verification Status
 		tc := newToolchains[tcName]
+		vManifest := newVendors[c.Vendor]
+		aManifest := newArchs[c.Arch]
+		
 		cBytes, _ := json.Marshal(c)
 		tBytes, _ := json.Marshal(tc)
+		vBytes, _ := json.Marshal(vManifest)
+		aBytes, _ := json.Marshal(aManifest)
+		
 		h := sha256.New()
 		h.Write(cBytes)
 		h.Write(tBytes)
+		h.Write(vBytes)
+		h.Write(aBytes)
 		stateHash := hex.EncodeToString(h.Sum(nil))
 
 		c.Verified = false
@@ -198,10 +275,12 @@ func main() {
 		newChips[chipKey] = c
 	}
 
-	changed := !reflect.DeepEqual(oldChips, newChips) || !reflect.DeepEqual(oldToolchains, newToolchains)
+	changed := !reflect.DeepEqual(oldChips, newChips) || !reflect.DeepEqual(oldToolchains, newToolchains) || !reflect.DeepEqual(oldVendors, newVendors) || !reflect.DeepEqual(oldArchs, newArchs)
 
 	registry.Chips = newChips
 	registry.Toolchains = newToolchains
+	registry.Vendors = newVendors
+	registry.Archs = newArchs
 
 	if changed {
 		fmt.Println("Changes detected in chips manifests.")
