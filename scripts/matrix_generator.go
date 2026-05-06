@@ -66,9 +66,9 @@ type Target struct {
 	Cli  string `json:"cli"`
 }
 
-// getActiveCliVersions fetches tags from GitHub. Fallbacks to main.
+// getActiveCliVersions fetches releases from GitHub. Fallbacks to main.
 func getActiveCliVersions() []string {
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/Toob-Boot/Toob-Loader/tags", nil)
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/Toob-Boot/Toob-CLI-Release/releases", nil)
 	if err != nil {
 		return []string{"main"}
 	}
@@ -84,16 +84,16 @@ func getActiveCliVersions() []string {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	var tags []struct {
-		Name string `json:"name"`
+	var releases []struct {
+		TagName string `json:"tag_name"`
 	}
-	if err := json.Unmarshal(body, &tags); err != nil {
+	if err := json.Unmarshal(body, &releases); err != nil {
 		return []string{"main"}
 	}
 
 	var versions []string
-	for _, t := range tags {
-		versions = append(versions, t.Name)
+	for _, rel := range releases {
+		versions = append(versions, rel.TagName)
 	}
 	// Always append main as the bleeding edge test
 	versions = append(versions, "main")

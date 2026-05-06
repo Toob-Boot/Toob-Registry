@@ -78,15 +78,27 @@ jobs:
           path: ~/.toob/toolchains
           key: ${{ runner.os }}-toolchains-${{ hashFiles('toolchains/**/toolchain_manifest.json') }}
 
-      - name: Build Toob CLI
+      - name: Install Toob CLI
         run: |
+          CLI_VER="${{ matrix.target.cli }}"
+          
+          # Clone compiler repo (needed for native builds: cmake configs, etc.)
           git clone https://github.com/Toob-Boot/Toob-Loader.git /tmp/Toob-Loader
           cd /tmp/Toob-Loader
-
-          CLI_VER="${{ matrix.target.cli }}"
+          
           if [ "$CLI_VER" != "main" ] && [ "$CLI_VER" != "" ]; then
-            echo "Checking out Toob-Loader cli version: $CLI_VER"
-            git checkout $CLI_VER || echo "Warning: Tag $CLI_VER not found, using main"
+            echo ">>> Fetching pre-compiled release $CLI_VER from Toob-CLI-Release..."
+            git checkout $CLI_VER || echo "Warning: Tag $CLI_VER not found in source, using main"
+            
+            wget -qO toob https://github.com/Toob-Boot/Toob-CLI-Release/releases/download/${CLI_VER}/toob-linux-amd64
+            chmod +x toob
+            sudo mv toob /usr/local/bin/
+          else
+            echo ">>> Compiling Bleeding-Edge CLI from main branch..."
+            cd cli/toob-cli
+            go build -o toob
+            sudo mv toob /usr/local/bin/
+            cd ../../
           fi
 
           # Install Python SUIT dependencies
@@ -95,10 +107,6 @@ jobs:
           else
             pip3 install cryptography "cbor2<6.0.0" ecdsa zcbor --break-system-packages
           fi
-
-          cd cli/toob-cli
-          go build -o toob
-          sudo mv toob /usr/local/bin/
 
       - name: Native C-Compilation Build
         run: |
