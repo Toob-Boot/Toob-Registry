@@ -5,6 +5,8 @@ on:
     paths:
       - 'chips/**'
       - 'toolchains/**'
+      - 'vendor/**'
+      - 'arch/**'
       - 'registry.json'
 
 permissions:

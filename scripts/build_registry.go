@@ -151,6 +151,9 @@ func main() {
 			if err := json.Unmarshal(mdata, &manifest); err != nil {
 				log.Fatalf("FATAL: Error parsing %s: %v", vPath, err)
 			}
+			if manifest.Name == "" || manifest.Version == "" {
+				log.Fatalf("FATAL: Vendor manifest '%s' is missing 'name' or 'version'", vPath)
+			}
 			newVendors[vName] = manifest
 		}
 	}
@@ -172,6 +175,9 @@ func main() {
 			var manifest ArchEntry
 			if err := json.Unmarshal(mdata, &manifest); err != nil {
 				log.Fatalf("FATAL: Error parsing %s: %v", aPath, err)
+			}
+			if manifest.Name == "" || manifest.Version == "" {
+				log.Fatalf("FATAL: Arch manifest '%s' is missing 'name' or 'version'", aPath)
 			}
 			newArchs[aName] = manifest
 		}
@@ -248,8 +254,14 @@ func main() {
 
 		// Check Matrix Verification Status
 		tc := newToolchains[tcName]
-		vManifest := newVendors[c.Vendor]
-		aManifest := newArchs[c.Arch]
+		vManifest, vExists := newVendors[c.Vendor]
+		if !vExists {
+			log.Fatalf("FATAL: Chip '%s' uses vendor '%s', but no valid vendor_manifest.json was loaded for it!", chipKey, c.Vendor)
+		}
+		aManifest, aExists := newArchs[c.Arch]
+		if !aExists {
+			log.Fatalf("FATAL: Chip '%s' uses arch '%s', but no valid arch_manifest.json was loaded for it!", chipKey, c.Arch)
+		}
 		
 		cBytes, _ := json.Marshal(c)
 		tBytes, _ := json.Marshal(tc)

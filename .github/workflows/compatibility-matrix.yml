@@ -8,12 +8,16 @@ on:
     paths:
       - 'chips/**'
       - 'toolchains/**'
+      - 'vendor/**'
+      - 'arch/**'
   push:
     branches:
       - main
     paths:
       - 'chips/**'
       - 'toolchains/**'
+      - 'vendor/**'
+      - 'arch/**'
 
 permissions:
   contents: write # Needed to commit compatibility_matrix.json
@@ -117,4 +121,9 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add compatibility_matrix.json
           # Only commit if there are changes
-          git diff --staged --quiet || (git commit -m "chore(ci): update compatibility matrix ledger [skip ci]" && git push)
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(ci): update compatibility matrix ledger [skip ci]"
+            # Rebase to avoid conflicts if main was updated during tests
+            git pull --rebase origin main
+            git push
+          fi
