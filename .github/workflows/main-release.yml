@@ -26,6 +26,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.26.2"
+          cache: false
 
       - name: Run Aggregator
         run: |
