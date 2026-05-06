@@ -1,6 +1,6 @@
 {
     "format_version": 1,
-    "registry_version": "v1.0.3",
+    "registry_version": "v1.0.4",
     "core_compatibility": "\u003e=1.0.0",
     "chips": {
         "esp32c6": {
@@ -37,7 +37,7 @@
         "esp": {
             "name": "Espressif",
             "path": "vendor/esp",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "description": "Hardware Abstraction Layer for Espressif Devices"
         }
     },
