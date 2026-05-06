@@ -70,6 +70,7 @@ func main() {
 		matrix = make(Matrix)
 	}
 
+	targetChip := os.Getenv("CHIP")
 	testQueue := []string{}
 
 	for chipKey, chip := range registry.Chips {
@@ -92,6 +93,11 @@ func main() {
 		h.Write(tcBytes)
 		stateHash := hex.EncodeToString(h.Sum(nil))
 
+		if os.Getenv("CHIP") == chipKey {
+			fmt.Print(stateHash)
+			os.Exit(0)
+		}
+
 		needsTest := true
 		matrixEntry, exists := matrix[chipKey]
 		if exists {
@@ -106,6 +112,11 @@ func main() {
 		if needsTest {
 			testQueue = append(testQueue, chipKey)
 		}
+	}
+
+	if targetChip != "" {
+		fmt.Print("dummyhash")
+		os.Exit(1)
 	}
 
 	out, _ := json.Marshal(testQueue)

@@ -78,9 +78,9 @@ jobs:
         run: |
           # Re-calculate state hash for this specific chip
           go run scripts/matrix_generator.go > /dev/null # Ensure deps
-          HASH=$(go run -exec 'env CHIP=${{ matrix.chip }}' scripts/matrix_generator_hash.go || echo "dummyhash")
+          HASH=$(env CHIP=${{ matrix.chip }} go run scripts/matrix_generator.go || echo "dummyhash")
           # Save result
-          echo "{\"chip\":\"${{ matrix.chip }}\", \"status\":\"VERIFIED\"}" > result_${{ matrix.chip }}.json
+          echo "{\"chip\":\"${{ matrix.chip }}\", \"status\":\"VERIFIED\", \"state_hash\":\"$HASH\"}" > result_${{ matrix.chip }}.json
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
