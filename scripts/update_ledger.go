@@ -15,15 +15,15 @@ type Dependencies struct {
 	Arch      string `json:"arch"`
 }
 
-type VerifiedCli struct {
+type VerifiedCombination struct {
 	Status     string `json:"status"`
 	LastTested string `json:"last_tested"`
 }
 
 type MatrixVersion struct {
-	EnvironmentHash     string                 `json:"environment_hash"`
-	Dependencies        Dependencies           `json:"dependencies"`
-	VerifiedCliVersions map[string]VerifiedCli `json:"verified_cli_versions"`
+	EnvironmentHash      string                           `json:"environment_hash"`
+	Dependencies         Dependencies                     `json:"dependencies"`
+	VerifiedCombinations map[string]VerifiedCombination   `json:"verified_combinations"`
 }
 
 type MatrixChip struct {
@@ -33,10 +33,12 @@ type MatrixChip struct {
 type Matrix map[string]MatrixChip
 
 type Result struct {
-	Chip         string `json:"chip"`
-	CliVersion   string `json:"cli_version"`
-	Status       string `json:"status"`
-	StateHash    string `json:"state_hash"`
+	Chip            string `json:"chip"`
+	CliVersion      string `json:"cli_version"`
+	CoreVersion     string `json:"core_version"`
+	CompilerVersion string `json:"compiler_version"`
+	Status          string `json:"status"`
+	StateHash       string `json:"state_hash"`
 }
 
 func main() {
@@ -83,6 +85,13 @@ func main() {
 
 		if res.Chip == "" || res.StateHash == "" || res.CliVersion == "" {
 			continue
+		}
+		
+		if res.CoreVersion == "" {
+			res.CoreVersion = "main"
+		}
+		if res.CompilerVersion == "" {
+			res.CompilerVersion = "latest"
 		}
 
 		chipEntry, chipExists := matrix[res.Chip]
@@ -143,16 +152,22 @@ func main() {
 		versionEntry, versionExists := chipEntry.Versions[chipManifestVer]
 		if !versionExists || versionEntry.EnvironmentHash != res.StateHash {
 			versionEntry = MatrixVersion{
-				EnvironmentHash:     res.StateHash,
-				Dependencies:        chipMetaDeps,
-				VerifiedCliVersions: make(map[string]VerifiedCli),
+				EnvironmentHash:      res.StateHash,
+				Dependencies:         chipMetaDeps,
+				VerifiedCombinations: make(map[string]VerifiedCombination),
 			}
 		}
 
+		if versionEntry.VerifiedCombinations == nil {
+			versionEntry.VerifiedCombinations = make(map[string]VerifiedCombination)
+		}
+
+		tupleKey := fmt.Sprintf("cli=%s::core=%s::compiler=%s", res.CliVersion, res.CoreVersion, res.CompilerVersion)
+
 		// Update or insert current status
-		currentCli, cliExists := versionEntry.VerifiedCliVersions[res.CliVersion]
-		if !cliExists || currentCli.Status != res.Status {
-			versionEntry.VerifiedCliVersions[res.CliVersion] = VerifiedCli{
+		currentComb, combExists := versionEntry.VerifiedCombinations[tupleKey]
+		if !combExists || currentComb.Status != res.Status {
+			versionEntry.VerifiedCombinations[tupleKey] = VerifiedCombination{
 				Status:     res.Status,
 				LastTested: timestamp,
 			}
@@ -163,7 +178,7 @@ func main() {
 			chipEntry.Versions[chipManifestVer] = versionEntry
 			matrix[res.Chip] = chipEntry
 			updated = true
-			fmt.Printf("Appended new state for chip %s@%s & CLI %s (Status: %s) to ledger.\n", res.Chip, chipManifestVer, res.CliVersion, res.Status)
+			fmt.Printf("Appended new state for chip %s@%s & %s (Status: %s) to ledger.\n", res.Chip, chipManifestVer, tupleKey, res.Status)
 		}
 	}
 

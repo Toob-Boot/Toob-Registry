@@ -19,6 +19,8 @@ type ChipManifest struct {
 	Description    string `json:"description"`
 	Version        string `json:"version"`
 	Path           string `json:"path,omitempty"`
+	MinCoreSDK     string `json:"min_core_sdk,omitempty"`
+	MinCompiler    string `json:"min_compiler,omitempty"`
 }
 
 type ToolchainEntry struct {
@@ -52,15 +54,15 @@ type Dependencies struct {
 	Arch      string `json:"arch"`
 }
 
-type VerifiedCli struct {
+type VerifiedCombination struct {
 	Status     string `json:"status"`
 	LastTested string `json:"last_tested"`
 }
 
 type MatrixVersion struct {
-	EnvironmentHash     string                 `json:"environment_hash"`
-	Dependencies        Dependencies           `json:"dependencies"`
-	VerifiedCliVersions map[string]VerifiedCli `json:"verified_cli_versions"`
+	EnvironmentHash     string                           `json:"environment_hash"`
+	Dependencies        Dependencies                     `json:"dependencies"`
+	VerifiedCombinations map[string]VerifiedCombination `json:"verified_combinations"`
 }
 
 type MatrixChip struct {
@@ -70,8 +72,10 @@ type MatrixChip struct {
 type Matrix map[string]MatrixChip
 
 type Target struct {
-	Chip string `json:"chip"`
-	Cli  string `json:"cli"`
+	Chip     string `json:"chip"`
+	Cli      string `json:"cli"`
+	Core     string `json:"core"`
+	Compiler string `json:"compiler"`
 }
 
 // getActiveCliVersions fetches releases from GitHub. Fallbacks to main.
@@ -112,6 +116,47 @@ func getActiveCliVersions() []string {
 	return versions
 }
 
+// getActiveCoreVersions fetches tags from Toob-Loader repo. Fallbacks to main.
+func getActiveCoreVersions() []string {
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/Toob-Boot/Toob-Loader/tags", nil)
+	if err != nil {
+		return []string{"main"}
+	}
+	req.Header.Set("User-Agent", "Toob-Registry-Matrix-Generator")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return []string{"main"}
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var tags []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(body, &tags); err != nil {
+		return []string{"main"}
+	}
+
+	var versions []string
+	for _, tag := range tags {
+		if len(tag.Name) > 5 && tag.Name[:5] == "core/" {
+			versions = append(versions, tag.Name)
+		}
+	}
+	// Always append main
+	versions = append(versions, "main")
+	return versions
+}
+
+// getActiveCompilerVersions returns the current compiler tags to test.
+func getActiveCompilerVersions() []string {
+	return []string{"latest"}
+}
+
 func main() {
 	regData, err := os.ReadFile("registry.json")
 	if err != nil {
@@ -139,6 +184,8 @@ func main() {
 
 	targetChip := os.Getenv("CHIP")
 	cliVersions := getActiveCliVersions()
+	coreVersions := getActiveCoreVersions()
+	compilerVersions := getActiveCompilerVersions()
 	testQueue := []Target{}
 
 	for chipKey, chip := range registry.Chips {
@@ -176,25 +223,44 @@ func main() {
 
 		// Calculate T - A (Target minus Actual)
 		matrixEntry, chipExists := matrix[chipKey]
-		var verifiedMap map[string]VerifiedCli
+		var verifiedMap map[string]VerifiedCombination
 		
 		if chipExists {
 			if versionEntry, versionExists := matrixEntry.Versions[chip.Version]; versionExists && versionEntry.EnvironmentHash == hardwareHash {
-				verifiedMap = versionEntry.VerifiedCliVersions
+				if versionEntry.VerifiedCombinations != nil {
+					verifiedMap = versionEntry.VerifiedCombinations
+				} else {
+					verifiedMap = make(map[string]VerifiedCombination)
+				}
 			} else {
-				verifiedMap = make(map[string]VerifiedCli)
+				verifiedMap = make(map[string]VerifiedCombination)
 			}
 		} else {
-			verifiedMap = make(map[string]VerifiedCli)
+			verifiedMap = make(map[string]VerifiedCombination)
 		}
 
 		// Compare Cartesian Product
 		for _, cli := range cliVersions {
-			if verifiedMap[cli].Status != "VERIFIED" {
-				testQueue = append(testQueue, Target{
-					Chip: chipKey,
-					Cli:  cli,
-				})
+			for _, core := range coreVersions {
+				for _, compiler := range compilerVersions {
+					// Build tuple key
+					tupleKey := fmt.Sprintf("cli=%s::core=%s::compiler=%s", cli, core, compiler)
+					
+					// Simple filter: if core != main and min_core_sdk is "main", skip older versions for now
+					// (A real semver check could be implemented here later)
+					if chip.MinCoreSDK == "main" && core != "main" {
+						continue
+					}
+
+					if verifiedMap[tupleKey].Status != "VERIFIED" {
+						testQueue = append(testQueue, Target{
+							Chip:     chipKey,
+							Cli:      cli,
+							Core:     core,
+							Compiler: compiler,
+						})
+					}
+				}
 			}
 		}
 	}

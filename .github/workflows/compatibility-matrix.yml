@@ -81,6 +81,11 @@ jobs:
 
           toob init dummy-app --chip ${{ matrix.target.chip }}
           cd dummy-app
+          
+          # Inject Core SDK and Compiler versions from Matrix
+          echo "[build]" >> device.toml
+          echo "core_sdk = \"${{ matrix.target.core }}\"" >> device.toml
+          echo "compiler = \"${{ matrix.target.compiler }}\"" >> device.toml
 
           export TOOB_COMPILER_DIR=/tmp/Toob-Loader
           toob build --native
@@ -98,15 +103,18 @@ jobs:
             STATUS="VERIFIED"
           fi
 
+          CORE_SAFE=$(echo "${{ matrix.target.core }}" | tr '/' '-')
+          echo "CORE_SAFE=$CORE_SAFE" >> $GITHUB_ENV
+
           # Save result
-          echo "{\"chip\":\"${{ matrix.target.chip }}\", \"cli_version\":\"${{ matrix.target.cli }}\", \"status\":\"$STATUS\", \"state_hash\":\"$HASH\"}" > result_${{ matrix.target.chip }}_${{ matrix.target.cli }}.json
+          echo "{\"chip\":\"${{ matrix.target.chip }}\", \"cli_version\":\"${{ matrix.target.cli }}\", \"core_version\":\"${{ matrix.target.core }}\", \"compiler_version\":\"${{ matrix.target.compiler }}\", \"status\":\"$STATUS\", \"state_hash\":\"$HASH\"}" > result_${{ matrix.target.chip }}_${{ matrix.target.cli }}_${CORE_SAFE}.json
 
       - name: Upload Artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: result-${{ matrix.target.chip }}-${{ matrix.target.cli }}
-          path: result_${{ matrix.target.chip }}_${{ matrix.target.cli }}.json
+          name: result-${{ matrix.target.chip }}-${{ matrix.target.cli }}-${{ env.CORE_SAFE }}
+          path: result_*.json
 
   update-ledger:
     name: Update Matrix Ledger
