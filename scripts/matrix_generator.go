@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type ChipManifest struct {
@@ -114,6 +115,13 @@ func getActiveCliVersions() []string {
 		return []string{"main"}
 	}
 	return versions
+}
+
+// normalizeVersion removes common prefixes like 'core/' or 'v' for clean comparisons.
+func normalizeVersion(v string) string {
+	v = strings.TrimPrefix(v, "core/")
+	v = strings.TrimPrefix(v, "v")
+	return v
 }
 
 // getActiveCoreVersions fetches tags from Toob-Loader repo. Fallbacks to main.
