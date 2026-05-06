@@ -1,7 +1,7 @@
 {
     "format_version": 1,
     "registry_version": "v1.0.4",
-    "cli_compatibility": ">=1.0.0",
+    "cli_compatibility": "\u003e=1.0.0",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
