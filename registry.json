@@ -1,32 +1,34 @@
 {
     "format_version": 1,
-    "registry_version": "v1.0.0",
-    "core_compatibility": ">=1.0.0",
+    "registry_version": "v1.0.1",
+    "core_compatibility": "\u003e=1.0.0",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
             "vendor": "esp",
             "arch": "riscv32",
             "cmake_toolchain_file": "toolchain-riscv32.cmake",
-            "path": "chips/esp32c6",
+            "compiler_prefix": "riscv32-esp-elf-",
+            "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)",
             "version": "1.0.0",
-            "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)"
+            "core_compatibility": "0.1.0",
+            "path": "chips/esp32c6"
         }
     },
     "toolchains": {
         "riscv32-esp-elf": {
             "version": "13.2.0_20230928",
             "urls": {
-                "linux_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-linux-gnu.tar.xz",
-                "windows_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-w64-mingw32.zip",
                 "darwin_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-apple-darwin.tar.xz",
-                "darwin_arm64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-apple-darwin.tar.xz"
+                "darwin_arm64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-apple-darwin.tar.xz",
+                "linux_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-linux-gnu.tar.xz",
+                "windows_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-w64-mingw32.zip"
             },
             "sha256": {
-                "linux_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "windows_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 "darwin_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                "darwin_arm64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                "darwin_arm64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "linux_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "windows_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
             }
         }
     }
