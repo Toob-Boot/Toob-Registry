@@ -322,6 +322,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("FATAL: Error marshaling registry: %v", err)
 	}
+	out = bytes.ReplaceAll(out, []byte("\\u003e"), []byte(">"))
+	out = bytes.ReplaceAll(out, []byte("\\u003c"), []byte("<"))
 	// Append newline
 	out = append(out, '\n')
 

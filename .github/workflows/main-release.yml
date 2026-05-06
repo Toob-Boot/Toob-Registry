@@ -68,5 +68,5 @@ jobs:
           git push origin main
           
           echo ">>> Creating Git Tag $NEW_VERSION..."
-          git tag "$NEW_VERSION"
-          git push origin "$NEW_VERSION"
+          git tag "$NEW_VERSION" || echo "Tag already exists"
+          git push origin "$NEW_VERSION" || echo "Push tag skipped"
