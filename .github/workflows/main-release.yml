@@ -21,7 +21,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 2
           token: ${{ secrets.BOT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Setup Go
@@ -29,6 +29,11 @@ jobs:
         with:
           go-version: "1.26.2"
           cache: false
+
+      - name: Run SemVer Calculator
+        run: |
+          echo ">>> Calculating automated Semantic Version bumps..."
+          go run scripts/semver_calc.go
 
       - name: Run Aggregator
         run: |
@@ -51,7 +56,7 @@ jobs:
           NEW_VERSION=$(jq -r '.registry_version' registry.json)
           
           echo ">>> Committing registry.json with version $NEW_VERSION"
-          git add registry.json
+          git add registry.json vendor/** chips/** arch/** toolchains/**
           git commit -m "chore: auto-generate registry index $NEW_VERSION"
           
           echo ">>> Pushing commit to main..."
