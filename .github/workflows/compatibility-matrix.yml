@@ -93,7 +93,7 @@ jobs:
           if [ -f requirements.txt ]; then
             pip3 install -r requirements.txt --break-system-packages
           else
-            pip3 install cryptography cbor2 ecdsa --break-system-packages
+            pip3 install cryptography cbor2 ecdsa zcbor --break-system-packages
           fi
           
           cd cli/toob-cli
