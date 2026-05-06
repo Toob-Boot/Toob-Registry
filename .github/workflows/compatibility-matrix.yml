@@ -99,7 +99,26 @@ jobs:
         with:
           token: ${{ secrets.BOT_TOKEN || secrets.GITHUB_TOKEN }}
           
-      # In the future: Download all result artifacts and use a script to append them to compatibility_matrix.json
-      # Then commit to main if github.ref == 'refs/heads/main'
-      - name: Placeholder for Ledger Updater
-        run: echo "Updating compatibility_matrix.json..."
+      - name: Download All Results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: result-*
+          merge-multiple: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.2"
+          cache: false
+
+      - name: Update Ledger JSON
+        run: go run scripts/update_ledger.go
+
+      - name: Commit and Push Ledger
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add compatibility_matrix.json
+          # Only commit if there are changes
+          git diff --staged --quiet || (git commit -m "chore(ci): update compatibility matrix ledger [skip ci]" && git push)
