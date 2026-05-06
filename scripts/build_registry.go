@@ -142,6 +142,18 @@ func main() {
 			log.Fatalf("FATAL: Chip '%s' is missing required fields.", chipKey)
 		}
 
+		// Verify that vendor directory actually exists in the codebase
+		vendorPath := filepath.Join("vendor", c.Vendor)
+		if _, err := os.Stat(vendorPath); os.IsNotExist(err) {
+			log.Fatalf("FATAL: Chip '%s' declares vendor '%s', but directory '%s' does not exist in registry!", chipKey, c.Vendor, vendorPath)
+		}
+
+		// Verify that arch directory actually exists in the codebase
+		archPath := filepath.Join("arch", c.Arch)
+		if _, err := os.Stat(archPath); os.IsNotExist(err) {
+			log.Fatalf("FATAL: Chip '%s' declares arch '%s', but directory '%s' does not exist in registry!", chipKey, c.Arch, archPath)
+		}
+
 		// Verify that the compiler_prefix actually exists in the toolchains dictionary!
 		tcName := strings.TrimSuffix(c.CompilerPrefix, "-")
 		if _, exists := newToolchains[tcName]; !exists {
