@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "1.26.2"
           cache: false
@@ -73,7 +73,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libusb-1.0-0 ninja-build cmake python3-pip
 
       - name: Cache Toolchains
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.toob/toolchains
           key: ${{ runner.os }}-toolchains-${{ hashFiles('toolchains/**/toolchain_manifest.json') }}
@@ -131,7 +131,7 @@ jobs:
 
       - name: Upload Artifact
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: result-${{ matrix.target.chip }}-${{ matrix.target.cli }}
           path: result_${{ matrix.target.chip }}_${{ matrix.target.cli }}.json
@@ -143,12 +143,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.BOT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Download All Results
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: result-*
           merge-multiple: true
