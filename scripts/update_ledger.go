@@ -16,10 +16,14 @@ type HistoryEntry struct {
 	Timestamp    string `json:"timestamp"`
 }
 
-type MatrixChip struct {
-	CurrentHardwareHash string            `json:"current_hardware_hash"`
+type MatrixVersion struct {
+	HardwareHash        string            `json:"hardware_hash"`
 	VerifiedCliVersions map[string]string `json:"verified_cli_versions"`
 	History             []HistoryEntry    `json:"history"`
+}
+
+type MatrixChip struct {
+	Versions map[string]MatrixVersion `json:"versions"`
 }
 
 type Matrix map[string]MatrixChip
@@ -77,23 +81,46 @@ func main() {
 			continue
 		}
 
-		chipEntry, exists := matrix[res.Chip]
-		if !exists || chipEntry.CurrentHardwareHash != res.StateHash {
-			// Hash changed or new chip. Reset the verified map!
+		chipEntry, chipExists := matrix[res.Chip]
+		if !chipExists {
 			chipEntry = MatrixChip{
-				CurrentHardwareHash: res.StateHash,
+				Versions: make(map[string]MatrixVersion),
+			}
+			matrix[res.Chip] = chipEntry
+		}
+
+		regData, err := os.ReadFile("registry.json")
+		if err != nil {
+			log.Fatalf("FATAL: Error reading registry: %v", err)
+		}
+		var reg struct {
+			Chips map[string]struct {
+				Version string `json:"version"`
+			} `json:"chips"`
+		}
+		if err := json.Unmarshal(regData, &reg); err != nil {
+			log.Fatalf("FATAL: Error parsing registry: %v", err)
+		}
+
+		chipManifestVer := "1.0.0"
+		if chipMeta, ok := reg.Chips[res.Chip]; ok {
+			chipManifestVer = chipMeta.Version
+		}
+
+		versionEntry, versionExists := chipEntry.Versions[chipManifestVer]
+		if !versionExists || versionEntry.HardwareHash != res.StateHash {
+			versionEntry = MatrixVersion{
+				HardwareHash:        res.StateHash,
 				VerifiedCliVersions: make(map[string]string),
 				History:             []HistoryEntry{},
 			}
-			if exists {
-				// keep old history
-				chipEntry.History = matrix[res.Chip].History
+			if versionExists {
+				versionEntry.History = chipEntry.Versions[chipManifestVer].History
 			}
 		}
 
-		// Check if exact same historical run is already recorded to avoid duplicate entries
 		alreadyExists := false
-		for _, h := range chipEntry.History {
+		for _, h := range versionEntry.History {
 			if h.HardwareHash == res.StateHash && h.CliVersion == res.CliVersion && h.Status == res.Status {
 				alreadyExists = true
 				break
@@ -101,17 +128,21 @@ func main() {
 		}
 
 		if !alreadyExists {
-			chipEntry.History = append(chipEntry.History, HistoryEntry{
+			versionEntry.History = append(versionEntry.History, HistoryEntry{
 				HardwareHash: res.StateHash,
 				CliVersion:   res.CliVersion,
 				Status:       res.Status,
 				Timestamp:    timestamp,
 			})
 			
-			chipEntry.VerifiedCliVersions[res.CliVersion] = res.Status
+			versionEntry.VerifiedCliVersions[res.CliVersion] = res.Status
+			if chipEntry.Versions == nil {
+				chipEntry.Versions = make(map[string]MatrixVersion)
+			}
+			chipEntry.Versions[chipManifestVer] = versionEntry
 			matrix[res.Chip] = chipEntry
 			updated = true
-			fmt.Printf("Appended new state for chip %s @ CLI %s (Status: %s) to ledger.\n", res.Chip, res.CliVersion, res.Status)
+			fmt.Printf("Appended new state for chip %s@%s & CLI %s (Status: %s) to ledger.\n", res.Chip, chipManifestVer, res.CliVersion, res.Status)
 		}
 	}
 

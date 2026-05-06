@@ -1,23 +1,41 @@
 {
   "esp32c6": {
-    "current_hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
-    "verified_cli_versions": {
-      "main": "VERIFIED",
-      "v1.0.1": "VERIFIED"
-    },
-    "history": [
-      {
-        "cli_version": "main",
+    "versions": {
+      "1.0.0": {
         "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
-        "status": "VERIFIED",
-        "timestamp": "2026-05-06T17:20:39Z"
+        "verified_cli_versions": {
+          "main": "VERIFIED",
+          "v1.0.1": "VERIFIED"
+        },
+        "history": [
+          {
+            "cli_version": "main",
+            "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
+            "status": "VERIFIED",
+            "timestamp": "2026-05-06T17:20:39Z"
+          },
+          {
+            "cli_version": "v1.0.1",
+            "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
+            "status": "VERIFIED",
+            "timestamp": "2026-05-06T17:20:39Z"
+          }
+        ]
       },
-      {
-        "cli_version": "v1.0.1",
+      "1.1.0": {
         "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
-        "status": "VERIFIED",
-        "timestamp": "2026-05-06T17:20:39Z"
+        "verified_cli_versions": {
+          "main": "VERIFIED"
+        },
+        "history": [
+          {
+            "cli_version": "main",
+            "hardware_hash": "5e66c2f200af95afde1c1345b95f2b2b97d2f4802c88284ebacbe26adf57ca97",
+            "status": "VERIFIED",
+            "timestamp": "2026-05-06T18:05:00Z"
+          }
+        ]
       }
-    ]
+    }
   }
 }

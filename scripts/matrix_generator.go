@@ -53,10 +53,14 @@ type HistoryEntry struct {
 	Timestamp    string `json:"timestamp"`
 }
 
-type MatrixChip struct {
-	CurrentHardwareHash string            `json:"current_hardware_hash"`
+type MatrixVersion struct {
+	HardwareHash        string            `json:"hardware_hash"`
 	VerifiedCliVersions map[string]string `json:"verified_cli_versions"`
 	History             []HistoryEntry    `json:"history"`
+}
+
+type MatrixChip struct {
+	Versions map[string]MatrixVersion `json:"versions"`
 }
 
 type Matrix map[string]MatrixChip
@@ -167,13 +171,16 @@ func main() {
 		}
 
 		// Calculate T - A (Target minus Actual)
-		matrixEntry, exists := matrix[chipKey]
+		matrixEntry, chipExists := matrix[chipKey]
 		var verifiedMap map[string]string
 		
-		if exists && matrixEntry.CurrentHardwareHash == hardwareHash {
-			verifiedMap = matrixEntry.VerifiedCliVersions
+		if chipExists {
+			if versionEntry, versionExists := matrixEntry.Versions[chip.Version]; versionExists && versionEntry.HardwareHash == hardwareHash {
+				verifiedMap = versionEntry.VerifiedCliVersions
+			} else {
+				verifiedMap = make(map[string]string)
+			}
 		} else {
-			// Hash changed (or new chip), reset verified map
 			verifiedMap = make(map[string]string)
 		}
 

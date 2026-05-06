@@ -1,8 +1,8 @@
 {
-    "name": "esp32c6",
-    "vendor": "esp",
     "arch": "riscv32",
     "compiler_prefix": "riscv32-esp-elf-",
     "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)",
-    "version": "1.0.0"
+    "name": "esp32c6",
+    "vendor": "esp",
+    "version": "1.1.0"
 }

@@ -41,6 +41,11 @@ jobs:
       - name: Run Aggregator Validation
         run: go run scripts/build_registry.go -validate
 
+      - name: Run SemVer Dependency Resolver
+        run: |
+          go run scripts/semver_calc.go
+          go run scripts/build_registry.go # Rebuild to pick up bumped versions
+
       - name: Generate Queue
         id: set-matrix
         run: |
