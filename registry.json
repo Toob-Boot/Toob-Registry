@@ -1,7 +1,7 @@
 {
     "format_version": 1,
     "registry_version": "v1.0.4",
-    "core_compatibility": "\u003e=1.0.0",
+    "cli_compatibility": ">=1.0.0",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
@@ -10,7 +10,7 @@
             "compiler_prefix": "riscv32-esp-elf-",
             "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)",
             "version": "1.0.0",
-            "core_compatibility": "0.1.0",
+            "cli_compatibility": "0.1.0",
             "path": "chips/esp32c6",
             "verified": false
         }

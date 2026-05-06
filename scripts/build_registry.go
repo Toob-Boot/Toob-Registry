@@ -1,13 +1,13 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"crypto/sha256"
-	"encoding/hex"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -15,15 +15,15 @@ import (
 )
 
 type ChipManifest struct {
-	Name               string `json:"name"`
-	Vendor             string `json:"vendor"`
-	Arch               string `json:"arch"`
-	CompilerPrefix     string `json:"compiler_prefix"`
-	Description        string `json:"description"`
-	Version            string `json:"version"`
-	CoreCompatibility  string `json:"core_compatibility"`
-	Path               string `json:"path,omitempty"`
-	Verified           bool   `json:"verified"`
+	Name             string `json:"name"`
+	Vendor           string `json:"vendor"`
+	Arch             string `json:"arch"`
+	CompilerPrefix   string `json:"compiler_prefix"`
+	Description      string `json:"description"`
+	Version          string `json:"version"`
+	CliCompatibility string `json:"cli_compatibility"`
+	Path             string `json:"path,omitempty"`
+	Verified         bool   `json:"verified"`
 }
 
 type ToolchainEntry struct {
@@ -48,13 +48,13 @@ type ArchEntry struct {
 }
 
 type Registry struct {
-	FormatVersion     int                       `json:"format_version"`
-	RegistryVersion   string                    `json:"registry_version"`
-	CoreCompatibility string                    `json:"core_compatibility"`
-	Chips             map[string]ChipManifest   `json:"chips"`
-	Toolchains        map[string]ToolchainEntry `json:"toolchains"`
-	Vendors           map[string]VendorEntry    `json:"vendors"`
-	Archs             map[string]ArchEntry      `json:"archs"`
+	FormatVersion    int                       `json:"format_version"`
+	RegistryVersion  string                    `json:"registry_version"`
+	CliCompatibility string                    `json:"cli_compatibility"`
+	Chips            map[string]ChipManifest   `json:"chips"`
+	Toolchains       map[string]ToolchainEntry `json:"toolchains"`
+	Vendors          map[string]VendorEntry    `json:"vendors"`
+	Archs            map[string]ArchEntry      `json:"archs"`
 }
 
 func main() {
@@ -268,12 +268,12 @@ func main() {
 		if !aExists {
 			log.Fatalf("FATAL: Chip '%s' uses arch '%s', but no valid arch_manifest.json was loaded for it!", chipKey, c.Arch)
 		}
-		
+
 		cBytes, _ := json.Marshal(c)
 		tBytes, _ := json.Marshal(tc)
 		vBytes, _ := json.Marshal(vManifest)
 		aBytes, _ := json.Marshal(aManifest)
-		
+
 		h := sha256.New()
 		h.Write(cBytes)
 		h.Write(tBytes)

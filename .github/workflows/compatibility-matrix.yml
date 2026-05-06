@@ -83,10 +83,10 @@ jobs:
           git clone https://github.com/Toob-Boot/Toob-Loader.git /tmp/Toob-Loader
           cd /tmp/Toob-Loader
           
-          CORE_VER=$(jq -r '.core_compatibility' $GITHUB_WORKSPACE/registry.json)
-          if [ "$CORE_VER" != "null" ] && [ "$CORE_VER" != "" ]; then
-            echo "Checking out Toob-Loader core_compatibility version: $CORE_VER"
-            git checkout $CORE_VER || echo "Warning: Tag $CORE_VER not found, using main"
+          CLI_VER=$(jq -r '.cli_compatibility' $GITHUB_WORKSPACE/registry.json)
+          if [ "$CLI_VER" != "null" ] && [ "$CLI_VER" != "" ]; then
+            echo "Checking out Toob-Loader cli_compatibility version: $CLI_VER"
+            git checkout $CLI_VER || echo "Warning: Tag $CLI_VER not found, using main"
           fi
           
           # Install Python SUIT dependencies

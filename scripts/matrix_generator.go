@@ -16,7 +16,7 @@ type ChipManifest struct {
 	CompilerPrefix     string `json:"compiler_prefix"`
 	Description        string `json:"description"`
 	Version            string `json:"version"`
-	CoreCompatibility  string `json:"core_compatibility"`
+	CliCompatibility   string `json:"cli_compatibility"`
 	Path               string `json:"path,omitempty"`
 }
 
