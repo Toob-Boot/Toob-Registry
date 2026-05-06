@@ -131,7 +131,7 @@ func main() {
 
 	targetChip := os.Getenv("CHIP")
 	cliVersions := getActiveCliVersions()
-	var testQueue []Target
+	testQueue := []Target{}
 
 	for chipKey, chip := range registry.Chips {
 		tcName := chip.CompilerPrefix
