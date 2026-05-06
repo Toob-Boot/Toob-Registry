@@ -3,21 +3,21 @@ name: Compatibility Matrix (HCP)
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *' # Run nightly at 2 AM
+    - cron: "0 2 * * *" # Run nightly at 2 AM
   pull_request:
     paths:
-      - 'chips/**'
-      - 'toolchains/**'
-      - 'vendor/**'
-      - 'arch/**'
+      - "chips/**"
+      - "toolchains/**"
+      - "vendor/**"
+      - "arch/**"
   push:
     branches:
       - main
     paths:
-      - 'chips/**'
-      - 'toolchains/**'
-      - 'vendor/**'
-      - 'arch/**'
+      - "chips/**"
+      - "toolchains/**"
+      - "vendor/**"
+      - "arch/**"
 
 permissions:
   contents: write # Needed to commit compatibility_matrix.json
@@ -30,10 +30,10 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: "1.26.2"
           cache: false
@@ -82,20 +82,20 @@ jobs:
         run: |
           git clone https://github.com/Toob-Boot/Toob-Loader.git /tmp/Toob-Loader
           cd /tmp/Toob-Loader
-          
+
           CLI_VER="${{ matrix.target.cli }}"
           if [ "$CLI_VER" != "main" ] && [ "$CLI_VER" != "" ]; then
             echo "Checking out Toob-Loader cli version: $CLI_VER"
             git checkout $CLI_VER || echo "Warning: Tag $CLI_VER not found, using main"
           fi
-          
+
           # Install Python SUIT dependencies
           if [ -f requirements.txt ]; then
             pip3 install -r requirements.txt --break-system-packages
           else
             pip3 install cryptography "cbor2<6.0.0" ecdsa zcbor --break-system-packages
           fi
-          
+
           cd cli/toob-cli
           go build -o toob
           sudo mv toob /usr/local/bin/
@@ -106,26 +106,26 @@ jobs:
           # Inject PR Registry into local cache so init and build use the modified files
           mkdir -p ~/.toob/registry
           cp -a $GITHUB_WORKSPACE/. ~/.toob/registry/
-          
+
           toob init dummy-app --chip ${{ matrix.target.chip }}
           cd dummy-app
-          
+
           export TOOB_COMPILER_DIR=/tmp/Toob-Loader
           toob build --native
-          
+
       - name: Generate Result Artifact
         if: always()
         run: |
           # Re-calculate state hash for this specific chip
           go run scripts/matrix_generator.go > /dev/null # Ensure deps
           HASH=$(env CHIP=${{ matrix.target.chip }} go run scripts/matrix_generator.go || echo "dummyhash")
-          
+
           # Determine Status
           STATUS="FAILED"
           if [ "${{ job.status }}" == "success" ]; then
             STATUS="VERIFIED"
           fi
-          
+
           # Save result
           echo "{\"chip\":\"${{ matrix.target.chip }}\", \"cli_version\":\"${{ matrix.target.cli }}\", \"status\":\"$STATUS\", \"state_hash\":\"$HASH\"}" > result_${{ matrix.target.chip }}_${{ matrix.target.cli }}.json
 
@@ -146,7 +146,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           token: ${{ secrets.BOT_TOKEN || secrets.GITHUB_TOKEN }}
-          
+
       - name: Download All Results
         uses: actions/download-artifact@v6
         with:
