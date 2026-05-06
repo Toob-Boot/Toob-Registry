@@ -67,10 +67,36 @@ jobs:
           go-version: "1.26.2"
           cache: false
 
+      - name: Setup System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libncurses5 libusb-1.0-0 ninja-build cmake python3-pip
+
+      - name: Cache Toolchains
+        uses: actions/cache@v4
+        with:
+          path: ~/.toob/toolchains
+          key: ${{ runner.os }}-toolchains-${{ hashFiles('toolchains/**/toolchain_manifest.json') }}
+
       - name: Build Toob CLI
         run: |
           git clone https://github.com/Toob-Boot/Toob-Loader.git /tmp/Toob-Loader
-          cd /tmp/Toob-Loader/cli/toob-cli
+          cd /tmp/Toob-Loader
+          
+          CORE_VER=$(jq -r '.core_compatibility' $GITHUB_WORKSPACE/registry.json)
+          if [ "$CORE_VER" != "null" ] && [ "$CORE_VER" != "" ]; then
+            echo "Checking out Toob-Loader core_compatibility version: $CORE_VER"
+            git checkout $CORE_VER || echo "Warning: Tag $CORE_VER not found, using main"
+          fi
+          
+          # Install Python SUIT dependencies
+          if [ -f requirements.txt ]; then
+            pip3 install -r requirements.txt --break-system-packages
+          else
+            pip3 install cryptography cbor2 ecdsa --break-system-packages
+          fi
+          
+          cd cli/toob-cli
           go build -o toob
           sudo mv toob /usr/local/bin/
 
@@ -79,7 +105,7 @@ jobs:
           echo ">>> Spawning Dummy Project for ${{ matrix.chip }}..."
           # Inject PR Registry into local cache so init and build use the modified files
           mkdir -p ~/.toob/registry
-          cp -r $GITHUB_WORKSPACE/* ~/.toob/registry/
+          cp -a $GITHUB_WORKSPACE/. ~/.toob/registry/
           
           toob init dummy-app --chip ${{ matrix.chip }}
           cd dummy-app
