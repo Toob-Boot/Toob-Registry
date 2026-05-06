@@ -1,11 +1,16 @@
 {
   "esp32c6": {
-    "current_hash": "6216b68a9dab2f52d375475d3823f7059cb58164e7e107bc20d1e8688d41accd",
+    "current_hash": "36e22eba35f2ad6f2a624323cf28593cc7eca35e7c25b5eb94b8118ffbd9c019",
     "history": [
       {
         "state_hash": "6216b68a9dab2f52d375475d3823f7059cb58164e7e107bc20d1e8688d41accd",
         "status": "VERIFIED",
         "timestamp": "2026-05-06T03:36:53Z"
+      },
+      {
+        "state_hash": "36e22eba35f2ad6f2a624323cf28593cc7eca35e7c25b5eb94b8118ffbd9c019",
+        "status": "VERIFIED",
+        "timestamp": "2026-05-06T13:19:43Z"
       }
     ]
   }
