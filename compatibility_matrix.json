@@ -1,1 +1,12 @@
-{}
+{
+  "esp32c6": {
+    "current_hash": "6216b68a9dab2f52d375475d3823f7059cb58164e7e107bc20d1e8688d41accd",
+    "history": [
+      {
+        "state_hash": "6216b68a9dab2f52d375475d3823f7059cb58164e7e107bc20d1e8688d41accd",
+        "status": "VERIFIED",
+        "timestamp": "2026-05-06T03:36:53Z"
+      }
+    ]
+  }
+}
