@@ -1,0 +1,59 @@
+name: Registry Auto-Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'chips/**'
+      - 'toolchains/**'
+
+permissions:
+  contents: write # Needed to commit registry.json and create tags
+
+jobs:
+  release:
+    name: Generate Index & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.BOT_TOKEN }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.2"
+
+      - name: Run Aggregator
+        run: |
+          echo ">>> Generating global registry.json index..."
+          go run scripts/build_registry.go
+
+      - name: Commit and Tag Release
+        run: |
+          # Configure Git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if registry.json was modified
+          if git diff --exit-code registry.json; then
+            echo "No changes in registry.json detected."
+            exit 0
+          fi
+          
+          # Extract the new version from registry.json
+          NEW_VERSION=$(jq -r '.registry_version' registry.json)
+          
+          echo ">>> Committing registry.json with version $NEW_VERSION"
+          git add registry.json
+          git commit -m "chore: auto-generate registry index $NEW_VERSION"
+          
+          echo ">>> Pushing commit to main..."
+          git push origin main
+          
+          echo ">>> Creating Git Tag $NEW_VERSION..."
+          git tag "$NEW_VERSION"
+          git push origin "$NEW_VERSION"

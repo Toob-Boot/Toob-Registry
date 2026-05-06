@@ -1,0 +1,29 @@
+name: Registry PR Validator
+
+on:
+  pull_request:
+    paths:
+      - 'chips/**'
+      - 'toolchains/**'
+      - 'registry.json'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Registry Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.2"
+
+      - name: Run Aggregator Validation
+        run: |
+          echo ">>> Validating JSON Manifests and Structural Integrity..."
+          go run scripts/build_registry.go -validate
