@@ -1,6 +1,7 @@
 name: Compatibility Matrix (HCP)
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 2 * * *' # Run nightly at 2 AM
   pull_request:
