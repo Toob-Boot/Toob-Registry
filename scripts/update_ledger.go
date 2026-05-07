@@ -164,21 +164,40 @@ func main() {
 
 		tupleKey := fmt.Sprintf("cli=%s::core=%s::compiler=%s", res.CliVersion, res.CoreVersion, res.CompilerVersion)
 
-		// Update or insert current status
-		currentComb, combExists := versionEntry.VerifiedCombinations[tupleKey]
-		if !combExists || currentComb.Status != res.Status {
-			versionEntry.VerifiedCombinations[tupleKey] = VerifiedCombination{
-				Status:     res.Status,
-				LastTested: timestamp,
+		// Sweep and Prune: remove any existing non-VERIFIED statuses to reduce JSON bloat
+		for key, comb := range versionEntry.VerifiedCombinations {
+			if comb.Status != "VERIFIED" {
+				delete(versionEntry.VerifiedCombinations, key)
+				updated = true
 			}
-			
+		}
+
+		currentComb, combExists := versionEntry.VerifiedCombinations[tupleKey]
+		
+		if res.Status == "VERIFIED" {
+			if !combExists || currentComb.LastTested != timestamp {
+				versionEntry.VerifiedCombinations[tupleKey] = VerifiedCombination{
+					Status:     res.Status,
+					LastTested: timestamp,
+				}
+				updated = true
+				fmt.Printf("Appended VERIFIED state for chip %s@%s & %s to ledger.\n", res.Chip, chipManifestVer, tupleKey)
+			}
+		} else {
+			// If it's not VERIFIED, ensure it is NOT in the ledger.
+			if combExists {
+				delete(versionEntry.VerifiedCombinations, tupleKey)
+				updated = true
+				fmt.Printf("Pruned FAILED state for chip %s@%s & %s from ledger.\n", res.Chip, chipManifestVer, tupleKey)
+			}
+		}
+
+		if updated {
 			if chipEntry.Versions == nil {
 				chipEntry.Versions = make(map[string]MatrixVersion)
 			}
 			chipEntry.Versions[chipManifestVer] = versionEntry
 			matrix[res.Chip] = chipEntry
-			updated = true
-			fmt.Printf("Appended new state for chip %s@%s & %s (Status: %s) to ledger.\n", res.Chip, chipManifestVer, tupleKey, res.Status)
 		}
 	}
 

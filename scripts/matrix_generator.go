@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"golang.org/x/mod/semver"
 )
 
 type ChipManifest struct {
@@ -79,38 +81,68 @@ type Target struct {
 	Compiler string `json:"compiler"`
 }
 
+// fetchGitHubPages handles Link header pagination for GitHub API.
+func fetchGitHubPages(url string) ([]map[string]interface{}, error) {
+	var results []map[string]interface{}
+	for url != "" {
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("User-Agent", "Toob-Registry-Matrix-Generator")
+		if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil || resp.StatusCode != 200 {
+			if resp != nil {
+				resp.Body.Close()
+			}
+			return nil, fmt.Errorf("failed to fetch")
+		}
+
+		body, _ := io.ReadAll(resp.Body)
+		var page []map[string]interface{}
+		if err := json.Unmarshal(body, &page); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		results = append(results, page...)
+
+		url = ""
+		linkHeader := resp.Header.Get("Link")
+		if linkHeader != "" {
+			parts := strings.Split(linkHeader, ",")
+			for _, part := range parts {
+				if strings.Contains(part, `rel="next"`) {
+					start := strings.Index(part, "<")
+					end := strings.Index(part, ">")
+					if start != -1 && end != -1 {
+						url = part[start+1 : end]
+					}
+					break
+				}
+			}
+		}
+		resp.Body.Close()
+	}
+	return results, nil
+}
+
 // getActiveCliVersions fetches releases from GitHub. Fallbacks to main.
 func getActiveCliVersions() []string {
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/Toob-Boot/Toob-CLI-Release/releases", nil)
+	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-CLI-Release/releases?per_page=100")
 	if err != nil {
 		return []string{"main"}
 	}
-	req.Header.Set("User-Agent", "Toob-Registry-Matrix-Generator")
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		return []string{"main"}
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-	var releases []struct {
-		TagName string `json:"tag_name"`
-	}
-	if err := json.Unmarshal(body, &releases); err != nil {
-		return []string{"main"}
-	}
-
 	var versions []string
-	for _, rel := range releases {
-		versions = append(versions, rel.TagName)
+	for _, item := range data {
+		if tag, ok := item["tag_name"].(string); ok {
+			versions = append(versions, tag)
+		}
 	}
-	// Always append main as the bleeding edge test
 	versions = append(versions, "main")
-
 	if len(versions) == 0 {
 		return []string{"main"}
 	}
@@ -126,43 +158,62 @@ func normalizeVersion(v string) string {
 
 // getActiveCoreVersions fetches tags from Toob-Loader repo. Fallbacks to main.
 func getActiveCoreVersions() []string {
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/Toob-Boot/Toob-Loader/tags", nil)
+	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-Loader/tags?per_page=100")
 	if err != nil {
 		return []string{"main"}
 	}
-	req.Header.Set("User-Agent", "Toob-Registry-Matrix-Generator")
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		return []string{"main"}
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-	var tags []struct {
-		Name string `json:"name"`
-	}
-	if err := json.Unmarshal(body, &tags); err != nil {
-		return []string{"main"}
-	}
-
 	var versions []string
-	for _, tag := range tags {
-		if len(tag.Name) > 5 && tag.Name[:5] == "core/" {
-			versions = append(versions, tag.Name)
+	for _, item := range data {
+		if name, ok := item["name"].(string); ok {
+			if strings.HasPrefix(name, "core/") {
+				versions = append(versions, normalizeVersion(name))
+			}
 		}
 	}
-	// Always append main
 	versions = append(versions, "main")
 	return versions
 }
 
 // getActiveCompilerVersions returns the current compiler tags to test.
 func getActiveCompilerVersions() []string {
-	return []string{"latest"}
+	url := "https://hub.docker.com/v2/repositories/repowatt/toob-compiler/tags/?page_size=100"
+	var versions []string
+	
+	for url != "" {
+		resp, err := http.Get(url)
+		if err != nil || resp.StatusCode != 200 {
+			break
+		}
+		
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		
+		var result struct {
+			Next    *string `json:"next"`
+			Results []struct {
+				Name string `json:"name"`
+			} `json:"results"`
+		}
+		
+		if err := json.Unmarshal(body, &result); err != nil {
+			break
+		}
+		
+		for _, tag := range result.Results {
+			versions = append(versions, tag.Name)
+		}
+		
+		if result.Next != nil {
+			url = *result.Next
+		} else {
+			url = ""
+		}
+	}
+	
+	if len(versions) == 0 {
+		return []string{"latest"}
+	}
+	return versions
 }
 
 func main() {
@@ -254,10 +305,26 @@ func main() {
 					// Build tuple key
 					tupleKey := fmt.Sprintf("cli=%s::core=%s::compiler=%s", cli, core, compiler)
 					
-					// Simple filter: if core != main and min_core_sdk is "main", skip older versions for now
-					// (A real semver check could be implemented here later)
-					if chip.MinCoreSDK == "main" && core != "main" {
-						continue
+					// SemVer Filtering for Core SDK
+					if chip.MinCoreSDK != "" && chip.MinCoreSDK != "main" && core != "main" {
+						vCore := "v" + normalizeVersion(core)
+						vMin := "v" + normalizeVersion(chip.MinCoreSDK)
+						if semver.IsValid(vCore) && semver.IsValid(vMin) {
+							if semver.Compare(vCore, vMin) < 0 {
+								continue
+							}
+						}
+					}
+
+					// SemVer Filtering for Compiler
+					if chip.MinCompiler != "" && chip.MinCompiler != "latest" && compiler != "latest" {
+						vComp := "v" + normalizeVersion(compiler)
+						vMinC := "v" + normalizeVersion(chip.MinCompiler)
+						if semver.IsValid(vComp) && semver.IsValid(vMinC) {
+							if semver.Compare(vComp, vMinC) < 0 {
+								continue
+							}
+						}
 					}
 
 					if verifiedMap[tupleKey].Status != "VERIFIED" {
@@ -276,6 +343,11 @@ func main() {
 	if targetChip != "" {
 		fmt.Print("dummyhash")
 		os.Exit(1)
+	}
+
+	// Job limit logic to prevent CI explosions
+	if len(testQueue) > 256 {
+		testQueue = testQueue[:256]
 	}
 
 	out, _ := json.Marshal(testQueue)

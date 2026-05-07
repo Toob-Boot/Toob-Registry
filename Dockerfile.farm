@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+FROM golang:1.22-bookworm
+
+# Install required tools
+RUN apt-get update && apt-get install -y \
+    git \
+    docker.io \
+    make \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /farm
+
+# Clone the main Toob-Loader to have access to native build scripts if needed
+# (Toob-Loader expects to be mounted or present for Native builds)
+RUN git clone https://github.com/Toob-Boot/Toob-Loader.git /tmp/Toob-Loader
+
+# The entrypoint will simply run the orchestrator
+CMD ["go", "run", "scripts/matrix_orchestrator.go"]
