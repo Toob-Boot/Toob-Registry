@@ -47,13 +47,20 @@ type ArchEntry struct {
 	Description string `json:"description"`
 }
 
+type ReleasesIndex struct {
+	Cli      []string `json:"cli"`
+	CoreSDK  []string `json:"core_sdk"`
+	Compiler []string `json:"compiler"`
+}
+
 type Registry struct {
-	FormatVersion    int                       `json:"format_version"`
-	RegistryVersion  string                    `json:"registry_version"`
-	Chips            map[string]ChipManifest   `json:"chips"`
-	Toolchains       map[string]ToolchainEntry `json:"toolchains"`
-	Vendors          map[string]VendorEntry    `json:"vendors"`
-	Archs            map[string]ArchEntry      `json:"archs"`
+	FormatVersion   int                       `json:"format_version"`
+	RegistryVersion string                    `json:"registry_version"`
+	Releases        *ReleasesIndex            `json:"releases,omitempty"`
+	Chips           map[string]ChipManifest   `json:"chips"`
+	Toolchains      map[string]ToolchainEntry `json:"toolchains"`
+	Vendors         map[string]VendorEntry    `json:"vendors"`
+	Archs           map[string]ArchEntry      `json:"archs"`
 }
 
 func main() {
@@ -292,20 +299,65 @@ func main() {
 		newChips[chipKey] = c
 	}
 
-	changed := !reflect.DeepEqual(oldChips, newChips) || !reflect.DeepEqual(oldToolchains, newToolchains) || !reflect.DeepEqual(oldVendors, newVendors) || !reflect.DeepEqual(oldArchs, newArchs)
-
 	registry.Chips = newChips
 	registry.Toolchains = newToolchains
 	registry.Vendors = newVendors
 	registry.Archs = newArchs
 
+	// Read Releases Index
+	releasesData, err := os.ReadFile("releases.json")
+	var newReleases ReleasesIndex
+	if err == nil {
+		json.Unmarshal(releasesData, &newReleases)
+		// Wait to assign until after comparison
+		os.Remove("releases.json")
+	} else {
+		// If no new releases.json, keep the old one
+	}
+	
+	// Has anything changed?
+	changed := !reflect.DeepEqual(oldChips, newChips) || 
+	           !reflect.DeepEqual(oldToolchains, newToolchains) || 
+			   !reflect.DeepEqual(oldVendors, newVendors) || 
+			   !reflect.DeepEqual(oldArchs, newArchs)
+
+	if err == nil {
+		// Only consider releases changed if we actually read a new releases.json
+		// Compare with old registry.Releases if it exists. If it doesn't, it's a change.
+		// We'll just do a simple string comparison of the marshalled JSONs
+		oldRelJSON, _ := json.Marshal(registry.Releases)
+		newRelJSON, _ := json.Marshal(newReleases)
+		if string(oldRelJSON) != string(newRelJSON) {
+			changed = true
+		}
+		registry.Releases = &newReleases
+	}
+
 	if changed {
-		fmt.Println("Changes detected in chips manifests.")
+		fmt.Println("Changes detected in manifests or ecosystem releases.")
 		if !*validateOnly {
+			// Read max bump from chips if available
+			maxBump := 1 // Default to PATCH
+			bumpData, err := os.ReadFile(".chip_bumps.json")
+			if err == nil {
+				os.Remove(".chip_bumps.json")
+				var chipBumps map[string]int
+				json.Unmarshal(bumpData, &chipBumps)
+				for _, b := range chipBumps {
+					if b > maxBump {
+						maxBump = b
+					}
+				}
+			}
+
 			oldVer := registry.RegistryVersion
-			newVer := bumpPatch(oldVer)
+			newVer := bumpVersion(oldVer, maxBump)
 			registry.RegistryVersion = newVer
-			fmt.Printf("Bumping registry_version: %s -> %s\n", oldVer, newVer)
+			
+			bumpName := "PATCH"
+			if maxBump == 2 { bumpName = "MINOR" }
+			if maxBump == 3 { bumpName = "MAJOR" }
+			fmt.Printf("Bumping registry_version (%s): %s -> %s\n", bumpName, oldVer, newVer)
 		}
 	} else {
 		fmt.Println("No changes detected.")
@@ -332,12 +384,26 @@ func main() {
 	fmt.Println("Successfully updated registry.json")
 }
 
-func bumpPatch(v string) string {
+func bumpVersion(v string, bumpType int) string {
 	v = strings.TrimPrefix(v, "v")
 	parts := strings.Split(v, ".")
 	if len(parts) != 3 {
 		return "v" + v // fallback
 	}
+	major, _ := strconv.Atoi(parts[0])
+	minor, _ := strconv.Atoi(parts[1])
 	patch, _ := strconv.Atoi(parts[2])
-	return fmt.Sprintf("v%s.%s.%d", parts[0], parts[1], patch+1)
+	
+	if bumpType == 3 { // MAJOR
+		major++
+		minor = 0
+		patch = 0
+	} else if bumpType == 2 { // MINOR
+		minor++
+		patch = 0
+	} else { // PATCH (or default)
+		patch++
+	}
+	
+	return fmt.Sprintf("v%d.%d.%d", major, minor, patch)
 }

@@ -30,3 +30,10 @@ jobs:
         run: |
           echo ">>> Validating JSON Manifests and Structural Integrity..."
           go run scripts/build_registry.go -validate
+
+      - name: Run SemVer Downgrade Check
+        env:
+          GITHUB_EVENT_NAME: pull_request
+        run: |
+          echo ">>> Checking for illegal SemVer downgrades..."
+          go run scripts/semver_calc.go ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }}

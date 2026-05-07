@@ -1,0 +1,71 @@
+name: PR Matrix Gatekeeper
+
+on:
+  pull_request:
+    paths:
+      - "chips/**"
+      - "toolchains/**"
+      - "vendor/**"
+      - "arch/**"
+
+jobs:
+  generate:
+    name: Generate Smart Queue
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.2"
+          cache: false
+
+      - name: Run Aggregator Validation
+        run: go run scripts/build_registry.go -validate
+
+      - name: Generate Queue
+        id: set-matrix
+        run: |
+          QUEUE=$(go run scripts/matrix_generator.go)
+          echo "Test Queue: $QUEUE"
+          echo "matrix=$QUEUE" >> $GITHUB_OUTPUT
+
+  test:
+    name: Test Chip ${{ matrix.target.chip }} @ ${{ matrix.target.cli }}
+    needs: generate
+    if: ${{ needs.generate.outputs.matrix != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true # CRITICAL: Abort immediately if ONE fails to save compute!
+      matrix:
+        target: ${{ fromJson(needs.generate.outputs.matrix) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Setup Toob Ecosystem
+        uses: Toob-Boot/Toob-Loader/.github/actions/setup-cli@main
+        with:
+          cli-version: ${{ matrix.target.cli }}
+          install-native-deps: 'false' # We only need docker for PR checks
+
+      - name: Docker C-Compilation Build
+        run: |
+          echo ">>> Spawning Dummy Project for ${{ matrix.target.chip }} (CLI: ${{ matrix.target.cli }})..."
+          mkdir -p ~/.toob/registry
+          cp -a $GITHUB_WORKSPACE/. ~/.toob/registry/
+
+          toob init dummy-app --chip ${{ matrix.target.chip }}
+          cd dummy-app
+          
+          # Inject Core SDK and Compiler versions from Matrix
+          echo "[build]" >> device.toml
+          echo "core_sdk = \"${{ matrix.target.core }}\"" >> device.toml
+          echo "compiler = \"${{ matrix.target.compiler }}\"" >> device.toml
+
+          # CRITICAL: Use docker for PR checks!
+          toob build --docker

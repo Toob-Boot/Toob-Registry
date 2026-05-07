@@ -21,9 +21,9 @@ type VerifiedCombination struct {
 }
 
 type MatrixVersion struct {
-	EnvironmentHash      string                           `json:"environment_hash"`
-	Dependencies         Dependencies                     `json:"dependencies"`
-	VerifiedCombinations map[string]VerifiedCombination   `json:"verified_combinations"`
+	EnvironmentHash      string                         `json:"environment_hash"`
+	Dependencies         Dependencies                   `json:"dependencies"`
+	VerifiedCombinations map[string]VerifiedCombination `json:"verified_combinations"`
 }
 
 type MatrixChip struct {
@@ -88,6 +88,32 @@ func main() {
 	}
 	stateUpdated := false
 
+	// Read registry.json once instead of inside the loop
+	regData, err := os.ReadFile("registry.json")
+	if err != nil {
+		log.Fatalf("FATAL: Error reading registry: %v", err)
+	}
+	var reg struct {
+		Chips map[string]struct {
+			Version        string `json:"version"`
+			Vendor         string `json:"vendor"`
+			Arch           string `json:"arch"`
+			CompilerPrefix string `json:"compiler_prefix"`
+		} `json:"chips"`
+		Toolchains map[string]struct {
+			Version string `json:"version"`
+		} `json:"toolchains"`
+		Vendors map[string]struct {
+			Version string `json:"version"`
+		} `json:"vendors"`
+		Archs map[string]struct {
+			Version string `json:"version"`
+		} `json:"archs"`
+	}
+	if err := json.Unmarshal(regData, &reg); err != nil {
+		log.Fatalf("FATAL: Error parsing registry: %v", err)
+	}
+
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 	updated := false
 
@@ -107,7 +133,7 @@ func main() {
 		if res.Chip == "" || res.StateHash == "" || res.CliVersion == "" {
 			continue
 		}
-		
+
 		if res.CoreVersion == "" {
 			res.CoreVersion = "main"
 		}
@@ -123,46 +149,33 @@ func main() {
 			matrix[res.Chip] = chipEntry
 		}
 
-		regData, err := os.ReadFile("registry.json")
-		if err != nil {
-			log.Fatalf("FATAL: Error reading registry: %v", err)
-		}
-		var reg struct {
-			Chips map[string]struct {
-				Version        string `json:"version"`
-				Vendor         string `json:"vendor"`
-				Arch           string `json:"arch"`
-				CompilerPrefix string `json:"compiler_prefix"`
-			} `json:"chips"`
-			Toolchains map[string]struct{ Version string `json:"version"` } `json:"toolchains"`
-			Vendors    map[string]struct{ Version string `json:"version"` } `json:"vendors"`
-			Archs      map[string]struct{ Version string `json:"version"` } `json:"archs"`
-		}
-		if err := json.Unmarshal(regData, &reg); err != nil {
-			log.Fatalf("FATAL: Error parsing registry: %v", err)
-		}
-
 		chipManifestVer := "1.0.0"
 		var chipMetaDeps Dependencies
-		
+
 		if chipMeta, ok := reg.Chips[res.Chip]; ok {
 			chipManifestVer = chipMeta.Version
-			
+
 			// Resolve dependencies from registry
 			tcName := chipMeta.CompilerPrefix
 			if len(tcName) > 0 && tcName[len(tcName)-1] == '-' {
 				tcName = tcName[:len(tcName)-1]
 			}
-			
+
 			tcVer := "unknown"
-			if tc, ok := reg.Toolchains[tcName]; ok { tcVer = tc.Version }
-			
+			if tc, ok := reg.Toolchains[tcName]; ok {
+				tcVer = tc.Version
+			}
+
 			vVer := "unknown"
-			if v, ok := reg.Vendors[chipMeta.Vendor]; ok { vVer = v.Version }
-			
+			if v, ok := reg.Vendors[chipMeta.Vendor]; ok {
+				vVer = v.Version
+			}
+
 			aVer := "unknown"
-			if a, ok := reg.Archs[chipMeta.Arch]; ok { aVer = a.Version }
-			
+			if a, ok := reg.Archs[chipMeta.Arch]; ok {
+				aVer = a.Version
+			}
+
 			chipMetaDeps = Dependencies{
 				Toolchain: fmt.Sprintf("%s@%s", tcName, tcVer),
 				Vendor:    fmt.Sprintf("%s@%s", chipMeta.Vendor, vVer),
@@ -194,7 +207,7 @@ func main() {
 		}
 
 		currentComb, combExists := versionEntry.VerifiedCombinations[tupleKey]
-		
+
 		if res.Status == "VERIFIED" {
 			if !combExists || currentComb.LastTested != timestamp {
 				versionEntry.VerifiedCombinations[tupleKey] = VerifiedCombination{
@@ -221,7 +234,7 @@ func main() {
 			entry := internalState.Combinations[tupleKey]
 			entry.Status = res.Status
 			entry.LastTested = timestamp
-			
+
 			if res.Status == "INFRA_ERROR" {
 				entry.RetryCount++
 				if entry.RetryCount >= 2 {
@@ -231,7 +244,7 @@ func main() {
 			} else {
 				entry.RetryCount = 0
 			}
-			
+
 			internalState.Combinations[tupleKey] = entry
 			stateUpdated = true
 		}

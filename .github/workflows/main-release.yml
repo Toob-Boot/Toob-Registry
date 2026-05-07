@@ -21,7 +21,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           token: ${{ secrets.BOT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Setup Go
@@ -41,8 +41,11 @@ jobs:
           go run scripts/semver_calc.go $BEFORE_SHA $CURRENT_SHA
 
       - name: Run Aggregator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo ">>> Generating global registry.json index..."
+          go run scripts/sync_releases.go
           go run scripts/build_registry.go
 
       - name: Commit and Tag Release
@@ -65,6 +68,7 @@ jobs:
           git commit -m "chore: auto-generate registry index $NEW_VERSION [skip ci]"
 
           echo ">>> Pushing commit to main..."
+          git pull --rebase origin main
           git push origin main
 
           echo ">>> Creating Git Tag $NEW_VERSION..."

@@ -45,7 +45,14 @@ type ArchEntry struct {
 	Description string `json:"description"`
 }
 
+type ReleasesIndex struct {
+	Cli      []string `json:"cli"`
+	CoreSDK  []string `json:"core_sdk"`
+	Compiler []string `json:"compiler"`
+}
+
 type Registry struct {
+	Releases   *ReleasesIndex            `json:"releases,omitempty"`
 	Chips      map[string]ChipManifest   `json:"chips"`
 	Toolchains map[string]ToolchainEntry `json:"toolchains"`
 	Vendors    map[string]VendorEntry    `json:"vendors"`
@@ -263,9 +270,26 @@ func main() {
 	}
 
 	targetChip := os.Getenv("CHIP")
-	cliVersions := getActiveCliVersions()
-	coreVersions := getActiveCoreVersions()
-	compilerVersions := getActiveCompilerVersions()
+	var cliVersions []string
+	var coreVersions []string
+	var compilerVersions []string
+
+	if registry.Releases != nil {
+		cliVersions = registry.Releases.Cli
+		coreVersions = registry.Releases.CoreSDK
+		compilerVersions = registry.Releases.Compiler
+	}
+
+	if len(cliVersions) == 0 {
+		cliVersions = getActiveCliVersions()
+	}
+	if len(coreVersions) == 0 {
+		coreVersions = getActiveCoreVersions()
+	}
+	if len(compilerVersions) == 0 {
+		compilerVersions = getActiveCompilerVersions()
+	}
+	
 	testQueue := []Target{}
 
 	for chipKey, chip := range registry.Chips {
