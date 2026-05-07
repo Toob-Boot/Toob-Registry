@@ -1,6 +1,6 @@
 {
     "format_version": 1,
-    "registry_version": "v1.0.7",
+    "registry_version": "v1.0.8",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
@@ -27,7 +27,7 @@
                 "darwin_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 "darwin_arm64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 "linux_amd64": "782feefe354500c5f968e8c91959651be3bdbbd7ae8a17affcee2b1bffcaad89",
-                "windows_amd64": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                "windows_amd64": "1300a54505dc964fa9104482737152e669f4d880efc1d54057378d9e6910ae1e"
             }
         }
     },
