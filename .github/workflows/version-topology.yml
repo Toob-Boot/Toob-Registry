@@ -1,0 +1,58 @@
+name: Generate Version Topology
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "chips/**"
+      - "toolchains/**"
+      - "vendor/**"
+      - "arch/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write # Needed to commit version_topology.json
+
+jobs:
+  generate:
+    name: Generate Topology Map
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.BOT_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.2"
+          cache: false
+
+      - name: Run Topology Generator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo ">>> Generating version topology..."
+          go run -mod=mod scripts/generate_topology.go
+
+      - name: Commit and Push
+        run: |
+          # Configure Git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Check if version_topology.json was modified
+          if git diff --exit-code version_topology.json; then
+            echo "No changes in version_topology.json detected."
+            exit 0
+          fi
+
+          echo ">>> Committing version_topology.json"
+          git add version_topology.json
+          git commit -m "chore: auto-update version_topology.json [skip ci]"
+
+          echo ">>> Pushing commit to main..."
+          git pull --rebase origin main
+          git push origin main

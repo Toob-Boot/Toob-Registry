@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-type ReleasesIndex struct {
+type EcosystemIndex struct {
 	Cli      []string `json:"cli"`
 	CoreSDK  []string `json:"core_sdk"`
 	Compiler []string `json:"compiler"`
@@ -74,7 +74,9 @@ func getActiveCliVersions() []string {
 	var versions []string
 	for _, item := range data {
 		if tag, ok := item["tag_name"].(string); ok {
-			versions = append(versions, tag)
+			if strings.HasPrefix(tag, "cli/") {
+				versions = append(versions, strings.TrimPrefix(tag, "cli/"))
+			}
 		}
 	}
 	if len(versions) == 0 {
@@ -148,7 +150,7 @@ func getActiveCompilerVersions() []string {
 func main() {
 	fmt.Println("Syncing external ecosystem releases (CLI, Core, Compiler)...")
 	
-	index := ReleasesIndex{
+	index := EcosystemIndex{
 		Cli:      getActiveCliVersions(),
 		CoreSDK:  getActiveCoreVersions(),
 		Compiler: getActiveCompilerVersions(),

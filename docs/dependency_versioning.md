@@ -19,15 +19,18 @@ und vergleicht den IST-Zustand mit dem SOLL-Zustand.
         ┌──────────────────────────────────┼──────────────────────┐
         ▼                                  ▼                      ▼
 ┌───────────────┐  ┌───────────────────┐  ┌──────────────────────────┐
-│  CHIP (1.1.0) │  │ CLI (extern, Tag) │  │ CORE SDK (extern, Tag)  │
-│  chip_manifest│  │ GitHub Release    │  │ Git Tag core/v*          │
-│  .json        │  │ Toob-CLI-Release  │  │ Toob-Loader Repo        │
-└───┬───┬───┬───┘  └───────────────────┘  └──────────────────────────┘
-    │   │   │                              ┌──────────────────────────┐
-    │   │   │                              │ COMPILER (extern, Tag)  │
-    │   │   │                              │ DockerHub Image Tag     │
-    │   │   │                              │ repowatt/toob-compiler  │
-    ▼   ▼   ▼                              └──────────────────────────┘
+│  CHIP (1.1.0) │  │ COMPILER IMAGE    │  │ CORE SDK (extern, Tag)  │
+│  chip_manifest│  │ (v1.2.0)          │  │ Git Tag core/v*          │
+│  .json        │  │ DockerHub Tag     │  │ Toob-Loader Repo        │
+└───┬───┬───┬───┘  └────────┬──────────┘  └──────────────────────────┘
+    │   │   │               │
+    │   │   │               │ depends on (1:1 Mapping)
+    │   │   │               ▼
+    │   │   │      ┌───────────────────┐
+    │   │   │      │ CLI (extern, Tag) │
+    │   │   │      │ GitHub Release    │
+    │   │   │      │ Toob-CLI-Release  │
+    ▼   ▼   ▼      └───────────────────┘
 ┌──────┐ ┌────────┐ ┌───────────┐
 │ ARCH │ │ VENDOR │ │ TOOLCHAIN │
 │1.0.0 │ │ 1.0.1  │ │13.2.0_... │
@@ -37,6 +40,13 @@ und vergleicht den IST-Zustand mit dem SOLL-Zustand.
    Unabhängig voneinander.
    Keine gegenseitigen Dependencies.
 ```
+
+**Wichtig:** Die Cross-Compiler-Toolchain (z.B. `riscv32-esp-elf-gcc 13.2.0`)
+ist NICHT im Compiler Image vorinstalliert. Sie wird zur Laufzeit per
+`toolchain.EnsureAvailable()` aus der Registry auto-downloaded und in einem
+persistenten Docker-Volume gecached. Das Compiler Image enthält nur die
+System-Abhängigkeiten (cmake, ninja, python3, zcbor) und die **fest eingebackene
+Toob CLI Binary**.
 
 ---
 
@@ -119,18 +129,45 @@ und vergleicht den IST-Zustand mit dem SOLL-Zustand.
 
 ---
 
-### Schicht 2: Externe Software-Dimensionen (KEIN Manifest in der Registry)
+### Schicht 2: Externe Software-Dimensionen
 
-| Dimension | Wo existiert die Version? | Wie wird sie entdeckt? |
-|-----------|--------------------------|------------------------|
-| **CLI** | GitHub Releases (`Toob-CLI-Release`) | `matrix_generator.go` → GitHub API `/releases` |
-| **Core SDK** | Git Tags (`core/v*` in `Toob-Loader`) | `matrix_generator.go` → GitHub API `/tags` |
-| **Compiler** | Docker Image Tags (`repowatt/toob-compiler`) | `matrix_generator.go` → DockerHub API `/tags` |
+#### CLI (Source of Truth: GitHub Releases)
 
-Diese haben **kein eigenes SemVer-Management in der Registry**. Ihre Versionen werden extern verwaltet:
-- CLI: Durch den Oracle in `oracle-semver.yml` (ABI-Diff basiert)
-- Core: Durch den Oracle in `oracle-semver.yml` (ABI-Diff basiert)
-- Compiler: Manuell oder durch Docker-Build-Pipeline
+| Feld | Wert | Quelle |
+|------|------|--------|
+| **Wo** | GitHub Releases (`Toob-CLI-Release`) | `matrix_generator.go` → GitHub API `/releases` |
+| **Versionierung** | Oracle in `oracle-semver.yml` (ABI-Diff basiert) | Automatisch bei Push auf `main` |
+| **Vererbt an** | Compiler Image (1:1 Mapping) | Docker-Build-Pipeline |
+
+#### Core SDK (Source of Truth: Git Tags)
+
+| Feld | Wert | Quelle |
+|------|------|--------|
+| **Wo** | Git Tags (`core/v*` in `Toob-Loader`) | `matrix_generator.go` → GitHub API `/tags` |
+| **Versionierung** | Oracle in `oracle-semver.yml` (ABI-Diff basiert) | Automatisch bei Push auf `main` |
+| **Vererbt an** | Registry (indirekt über Matrix-Kombination) | — |
+
+#### Compiler Image (Source of Truth: DockerHub Tags)
+
+| Feld | Wert | Quelle |
+|------|------|--------|
+| **Wo** | DockerHub Image Tags (`toob-boot/toob-compiler`) | `matrix_generator.go` → DockerHub API `/tags` |
+| **Abhängig von** | **CLI** (1:1 Mapping: Compiler Image v1.2.0 = CLI v1.2.0) | Auto-Build bei CLI Release |
+| **Inhalt** | Ubuntu 26.04 + cmake + ninja + python3 + zcbor + **feste CLI Binary** | Dockerfile.compiler |
+| **NICHT enthalten** | Cross-Compiler-Toolchain (wird zur Laufzeit auto-downloaded) | `toolchain.EnsureAvailable()` |
+
+**CLI → Compiler Image SemVer-Vererbung:**
+- CLI PATCH (v1.0.0 → v1.0.1) → Compiler Image PATCH (v1.0.0 → v1.0.1)
+- CLI MINOR (v1.0.0 → v1.1.0) → Compiler Image MINOR (v1.0.0 → v1.1.0)
+- CLI MAJOR (v1.0.0 → v2.0.0) → Compiler Image MAJOR (v1.0.0 → v2.0.0)
+
+Das Compiler Image wird **automatisch** bei jedem CLI-Release gebaut und auf DockerHub
+gepusht. Es gibt exakt ein Image pro CLI-Version — kein Flickenteppich.
+Patches greifen sofort, weil jeder CLI-Bugfix automatisch ein neues Compiler-Image erzeugt.
+
+**Reproduzierbarkeit:** `toob-compiler:v1.0.0` verhält sich in 6 Monaten identisch.
+Ältere Chip-Konfigurationen können mit älteren Compiler-Images gebaut werden,
+selbst wenn die neueste CLI breaking changes eingeführt hat.
 
 ---
 
@@ -199,6 +236,9 @@ Zusammengeführt in einem PR-Merge:
 | Matrix: CLI/Core/Compiler dynamisch entdecken | `matrix_generator.go` | ✅ Funktioniert |
 | Matrix: SemVer-Filter (min_core_sdk, min_compiler) | `matrix_generator.go` | ✅ Funktioniert |
 | Matrix: Kartesisches Produkt (CLI × Core × Compiler) | `matrix_generator.go` | ✅ Funktioniert |
+| Compiler Image: Dockerfile + toob-ci-build.sh | `Dockerfile.compiler` | ✅ Implementiert |
+| Compiler Image: CLI→Image 1:1 Mapping (Architektur) | `dependency_versioning.md` | ✅ Dokumentiert |
+| Compiler Image: Toolchain Auto-Download + Cache | `session.go` + Volume | ✅ Implementiert |
 
 ### ❌ Was fehlt oder kaputt ist
 
@@ -209,8 +249,9 @@ Zusammengeführt in einem PR-Merge:
 | **Registry bumped nur PATCH** | `build_registry.go:bumpPatch()` | Egal ob eine Dependency einen MAJOR-Change hatte, die Registry-Version bekommt immer nur +0.0.1. |
 | **Kein Mechanismus erkennt den Bump-Typ** | Überall | Niemand liest, ob eine Dependency MAJOR/MINOR/PATCH geändert wurde. Es wird nur geprüft, ob sich der Hash geändert hat (binär: ja/nein). |
 | **Basis-Dependencies (Vendor/Arch/Toolchain) werden nie auto-gebumped** | — | Version muss immer manuell in der Manifest-Datei eingetragen werden. Kein Script erkennt Dateiänderungen automatisch. |
-| **CLI/Core/Compiler nicht in registry.json** | `registry.json` | Kein lokaler Index über externe Software-Versionen. |
+| **CLI/Core/Compiler nicht in registry.json** | `registry.json` | Kein lokaler Index über externe Software-Versionen. `planner.go` kann `latestCore`/`latestCompiler` nicht dynamisch auflösen. |
 | **Kein Commit-Message-Parsing** | — | Conventional Commits (`feat:`, `fix:`, `BREAKING CHANGE:`) werden ignoriert. |
+| **Compiler Image Auto-Publish Pipeline fehlt** | CI | Kein Workflow baut bei CLI-Release automatisch ein neues `toob-compiler:vX.Y.Z` Image und pusht es auf DockerHub. |
 
 ---
 
@@ -310,7 +351,7 @@ Wenn nicht → parse die Commit-Message als Fallback.
 
 ### B. CLI/Core/Compiler im Registry-Index?
 
-Sollen externe Versionen in `registry.json` unter einem `releases` Block gelistet werden?
+Sollen externe Versionen in `registry.json` unter einem `ecosystem` Block gelistet werden?
 - Pro: Lokale Übersicht, Offline-Nutzung, Registry-Version-Bump bei neuem Release
 - Contra: Registry-Version bumped auch ohne Hardware-Änderung (rein informativ)
 
@@ -334,13 +375,19 @@ WICHTIG: Obwohl wir nur für die gesamte Registry offizielle Git-Tags (wie `v1.0
 Die Historie der einzelnen Hardware-Teile lebt also ausschließlich **im Text der JSON-Dateien über die verschiedenen Git-Commits hinweg**, nicht in Git-Tags. Bei Force-Pushes fällt das System auf den letzten offiziellen Registry-Tag (`git describe --tags`) zurück, um den Zustand aller Manifeste von diesem Zeitpunkt zu holen.
 
 ### Externe Komponenten (Software / Ecosystem)
-Die Quelle der Wahrheit für das externe Software-Ökosystem sind die **öffentlichen APIs der jeweiligen Artifact-Stores**. Diese werden durch `sync_releases.go` abgefragt:
-1. **Toob CLI:** Wird per Pagination von der GitHub Releases API (`Toob-Boot/Toob-CLI-Release/releases`) abgefragt. Jeder publizierte GitHub Release ist hier eine offizielle Version.
-2. **Core SDK:** Wird per Pagination von der GitHub Tags API (`Toob-Boot/Toob-Loader/tags`) abgefragt. Alle Tags mit dem Prefix `core/v*` gelten als offizielle Core-Versionen.
+Das Toob-Ökosystem ist in vier spezialisierte Repositories aufgeteilt:
+- **[Toob-Loader](https://github.com/Toob-Boot/Toob-Loader)**: Das Haupt-Monorepo für den Core SDK und den Quellcode der CLI.
+- **[Toob-Registry](https://github.com/Toob-Boot/Toob-Registry)**: Enthält die Hardware-Manifeste und die zentrale `version_topology.json`. Es ist lokal als Git-Submodule eingebunden.
+- **[Toob-CLI-Pipeline](https://github.com/Toob-Boot/Toob-CLI-Pipeline)**: Die Pipeline-Logik (z.B. Docker-Umgebungen) für die CLI-Operationen.
+- **[Toob-CLI-Release](https://github.com/Toob-Boot/Toob-CLI-Release)**: Das reine Distributions-Repository für die veröffentlichten CLI-Binaries.
+
+Die Quelle der Wahrheit für dieses externe Software-Ökosystem sind die **öffentlichen APIs der jeweiligen Artifact-Stores**. Diese werden durch `generate_topology.go` abgefragt:
+1. **Toob CLI:** Wird per Pagination von der GitHub Releases API (`Toob-Boot/Toob-CLI-Release/releases`) abgefragt. Offizielle Versionen müssen zwingend den Prefix `cli/` tragen (z.B. `cli/v1.0.1`).
+2. **Core SDK:** Wird per Pagination von der GitHub Tags API (`Toob-Boot/Toob-Loader/tags`) abgefragt. Offizielle Versionen müssen zwingend den Prefix `core/v*` tragen.
 3. **Compiler:** Wird direkt von der DockerHub Tags API (`hub.docker.com/v2/.../toob-compiler/tags`) abgefragt. Jeder gebaute Docker-Container repräsentiert eine offizielle Toolchain-Umgebung.
 
-**Die Aggregation (Offline-Index):**
-Da wir nicht wollen, dass jeder Client oder Matrix-Worker tausende API-Requests an GitHub/DockerHub schickt, bündelt der `build_registry.go` Aggregator alle diese dezentralen Historien und bäckt sie statisch in den `releases` Block der `registry.json` ein. 
+**Die Aggregation (`version_topology.json`):**
+Da wir nicht wollen, dass das System andauernd das API-Ratelimit von GitHub sprengt, läuft im Hintergrund die GitHub Action `version-topology.yml`. Sie bündelt alle diese dezentralen Repositories und Releases und generiert eine statische `version_topology.json`. In dieser Datei wird der exakte, verifizierte Stand des gesamten Ökosystems ("Official" und "Main-Branch") eingefroren.
 
 **Die `registry.json` selbst:**
 Auch die `registry.json` wird exakt nach diesem Prinzip gehandhabt! Sie liegt im Root des Repositories und enthält ganz oben zwei wichtige Felder:

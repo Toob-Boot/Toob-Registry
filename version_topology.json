@@ -1,0 +1,126 @@
+{
+    "generated_at": "2026-05-07T17:38:34Z",
+    "main_branch": {
+        "chips": [
+            {
+                "name": "esp32c6",
+                "version": "1.1.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/chips/esp32c6"
+            }
+        ],
+        "archs": [
+            {
+                "name": "riscv32",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/arch/riscv32"
+            }
+        ],
+        "vendors": [
+            {
+                "name": "esp",
+                "version": "1.0.1",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/vendor/esp"
+            }
+        ],
+        "toolchains": [
+            {
+                "name": "riscv32-esp-elf",
+                "version": "13.2.0_20230928",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/toolchains/riscv32-esp-elf"
+            }
+        ]
+    },
+    "official": {
+        "registry": [
+            {
+                "version": "v1.0.8",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/releases/tag/v1.0.8",
+                "internal_snapshot": {
+                    "chips": [
+                        {
+                            "name": "esp32c6",
+                            "version": "1.2.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/chips/esp32c6"
+                        }
+                    ],
+                    "archs": [
+                        {
+                            "name": "riscv32",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/arch/riscv32"
+                        }
+                    ],
+                    "vendors": [
+                        {
+                            "name": "esp",
+                            "version": "1.0.1",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/vendor/esp"
+                        }
+                    ],
+                    "toolchains": [
+                        {
+                            "name": "riscv32-esp-elf",
+                            "version": "13.2.0_20230928",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/toolchains/riscv32-esp-elf"
+                        }
+                    ]
+                }
+            },
+            {
+                "version": "v1.0.6",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/releases/tag/v1.0.6",
+                "internal_snapshot": {
+                    "chips": [
+                        {
+                            "name": "esp32c6",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/chips/esp32c6"
+                        }
+                    ],
+                    "archs": [
+                        {
+                            "name": "riscv32",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/arch/riscv32"
+                        }
+                    ],
+                    "vendors": [
+                        {
+                            "name": "esp",
+                            "version": "1.0.1",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/vendor/esp"
+                        }
+                    ],
+                    "toolchains": [
+                        {
+                            "name": "riscv32-esp-elf",
+                            "version": "13.2.0_20230928",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/toolchains/riscv32-esp-elf"
+                        }
+                    ]
+                }
+            }
+        ],
+        "cli": [
+            {
+                "version": "cli/v1.0.1",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v1.0.1"
+            }
+        ],
+        "core_sdk": [
+            {
+                "version": "v1.0.1",
+                "source": "https://github.com/Toob-Boot/Toob-Loader/releases/tag/v1.0.1"
+            },
+            {
+                "version": "v1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Loader/releases/tag/v1.0.0"
+            },
+            {
+                "version": "core/v0.0.1",
+                "source": "https://github.com/Toob-Boot/Toob-Loader/releases/tag/core/v0.0.1"
+            }
+        ],
+        "compiler": null
+    }
+}

@@ -47,7 +47,7 @@ type ArchEntry struct {
 	Description string `json:"description"`
 }
 
-type ReleasesIndex struct {
+type EcosystemIndex struct {
 	Cli      []string `json:"cli"`
 	CoreSDK  []string `json:"core_sdk"`
 	Compiler []string `json:"compiler"`
@@ -56,7 +56,7 @@ type ReleasesIndex struct {
 type Registry struct {
 	FormatVersion   int                       `json:"format_version"`
 	RegistryVersion string                    `json:"registry_version"`
-	Releases        *ReleasesIndex            `json:"releases,omitempty"`
+	Ecosystem       *EcosystemIndex           `json:"ecosystem,omitempty"`
 	Chips           map[string]ChipManifest   `json:"chips"`
 	Toolchains      map[string]ToolchainEntry `json:"toolchains"`
 	Vendors         map[string]VendorEntry    `json:"vendors"`
@@ -306,9 +306,9 @@ func main() {
 
 	// Read Releases Index
 	releasesData, err := os.ReadFile("releases.json")
-	var newReleases ReleasesIndex
+	var newEcosystem EcosystemIndex
 	if err == nil {
-		json.Unmarshal(releasesData, &newReleases)
+		json.Unmarshal(releasesData, &newEcosystem)
 		// Wait to assign until after comparison
 		os.Remove("releases.json")
 	} else {
@@ -325,12 +325,12 @@ func main() {
 		// Only consider releases changed if we actually read a new releases.json
 		// Compare with old registry.Releases if it exists. If it doesn't, it's a change.
 		// We'll just do a simple string comparison of the marshalled JSONs
-		oldRelJSON, _ := json.Marshal(registry.Releases)
-		newRelJSON, _ := json.Marshal(newReleases)
+		oldRelJSON, _ := json.Marshal(registry.Ecosystem)
+		newRelJSON, _ := json.Marshal(newEcosystem)
 		if string(oldRelJSON) != string(newRelJSON) {
 			changed = true
 		}
-		registry.Releases = &newReleases
+		registry.Ecosystem = &newEcosystem
 	}
 
 	if changed {
