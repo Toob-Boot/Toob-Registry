@@ -3,11 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
 )
+
+func GenerateComboID(prefix, chip, cli, core, compiler string) string {
+	str := fmt.Sprintf("chip=%s::cli=%s::core=%s::compiler=%s", chip, cli, core, compiler)
+	h := crc32.ChecksumIEEE([]byte(str))
+	return fmt.Sprintf("%s-%06X", prefix, h)
+}
 
 type Dependencies struct {
 	Toolchain string `json:"toolchain"`
@@ -42,9 +49,14 @@ type Result struct {
 }
 
 type InternalStateEntry struct {
-	Status     string `json:"status"`
-	LastTested string `json:"last_tested"`
-	RetryCount int    `json:"retry_count"`
+	ID              string `json:"id"`
+	Chip            string `json:"chip"`
+	CliVersion      string `json:"cli_version"`
+	CoreVersion     string `json:"core_version"`
+	CompilerVersion string `json:"compiler_version"`
+	Status          string `json:"status"`
+	LastTested      string `json:"last_tested"`
+	RetryCount      int    `json:"retry_count"`
 }
 
 type InternalState struct {
@@ -197,6 +209,7 @@ func main() {
 		}
 
 		tupleKey := fmt.Sprintf("chip=%s::cli=%s::core=%s::compiler=%s", res.Chip, res.CliVersion, res.CoreVersion, res.CompilerVersion)
+		jobID := GenerateComboID("MT", res.Chip, res.CliVersion, res.CoreVersion, res.CompilerVersion)
 
 		// Sweep and Prune: remove any existing non-VERIFIED statuses to reduce JSON bloat
 		for key, comb := range versionEntry.VerifiedCombinations {
@@ -218,8 +231,8 @@ func main() {
 				fmt.Printf("Appended VERIFIED state for chip %s@%s & %s to ledger.\n", res.Chip, chipManifestVer, tupleKey)
 			}
 			// Prune from internal state if it exists
-			if _, exists := internalState.Combinations[tupleKey]; exists {
-				delete(internalState.Combinations, tupleKey)
+			if _, exists := internalState.Combinations[jobID]; exists {
+				delete(internalState.Combinations, jobID)
 				stateUpdated = true
 			}
 		} else {
@@ -231,7 +244,12 @@ func main() {
 			}
 
 			// Add to internal state outbox
-			entry := internalState.Combinations[tupleKey]
+			entry := internalState.Combinations[jobID]
+			entry.ID = jobID
+			entry.Chip = res.Chip
+			entry.CliVersion = res.CliVersion
+			entry.CoreVersion = res.CoreVersion
+			entry.CompilerVersion = res.CompilerVersion
 			entry.Status = res.Status
 			entry.LastTested = timestamp
 
@@ -239,13 +257,13 @@ func main() {
 				entry.RetryCount++
 				if entry.RetryCount >= 2 {
 					entry.Status = "FATAL_INFRA_ERROR"
-					fmt.Printf("Escalated INFRA_ERROR to FATAL_INFRA_ERROR for %s\n", tupleKey)
+					fmt.Printf("Escalated INFRA_ERROR to FATAL_INFRA_ERROR for %s\n", jobID)
 				}
 			} else {
 				entry.RetryCount = 0
 			}
 
-			internalState.Combinations[tupleKey] = entry
+			internalState.Combinations[jobID] = entry
 			stateUpdated = true
 		}
 
