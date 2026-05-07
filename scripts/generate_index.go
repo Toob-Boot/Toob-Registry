@@ -294,10 +294,10 @@ func main() {
 	topology.Official.Compiler = getCompilerVersions()
 
 	out, _ := json.MarshalIndent(topology, "", "    ")
-	err = os.WriteFile("version_topology.json", out, 0644)
+	err = os.WriteFile("version_index.json", out, 0644)
 	if err != nil {
-		log.Fatalf("FATAL: Error writing version_topology.json: %v", err)
+		log.Fatalf("FATAL: Error writing version_index.json: %v", err)
 	}
 
-	fmt.Println("Successfully wrote version_topology.json")
+	fmt.Println("Successfully wrote version_index.json")
 }

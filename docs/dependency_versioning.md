@@ -377,17 +377,17 @@ Die Historie der einzelnen Hardware-Teile lebt also ausschließlich **im Text de
 ### Externe Komponenten (Software / Ecosystem)
 Das Toob-Ökosystem ist in vier spezialisierte Repositories aufgeteilt:
 - **[Toob-Loader](https://github.com/Toob-Boot/Toob-Loader)**: Das Haupt-Monorepo für den Core SDK und den Quellcode der CLI.
-- **[Toob-Registry](https://github.com/Toob-Boot/Toob-Registry)**: Enthält die Hardware-Manifeste und die zentrale `version_topology.json`. Es ist lokal als Git-Submodule eingebunden.
+- **[Toob-Registry](https://github.com/Toob-Boot/Toob-Registry)**: Enthält die Hardware-Manifeste und die zentrale `version_index.json`. Es ist lokal als Git-Submodule eingebunden.
 - **[Toob-CLI-Pipeline](https://github.com/Toob-Boot/Toob-CLI-Pipeline)**: Die Pipeline-Logik (z.B. Docker-Umgebungen) für die CLI-Operationen.
 - **[Toob-CLI-Release](https://github.com/Toob-Boot/Toob-CLI-Release)**: Das reine Distributions-Repository für die veröffentlichten CLI-Binaries.
 
-Die Quelle der Wahrheit für dieses externe Software-Ökosystem sind die **öffentlichen APIs der jeweiligen Artifact-Stores**. Diese werden durch `generate_topology.go` abgefragt:
+Die Quelle der Wahrheit für dieses externe Software-Ökosystem sind die **öffentlichen APIs der jeweiligen Artifact-Stores**. Diese werden durch `generate_index.go` abgefragt:
 1. **Toob CLI:** Wird per Pagination von der GitHub Releases API (`Toob-Boot/Toob-CLI-Release/releases`) abgefragt. Offizielle Versionen müssen zwingend den Prefix `cli/` tragen (z.B. `cli/v1.0.1`).
 2. **Core SDK:** Wird per Pagination von der GitHub Tags API (`Toob-Boot/Toob-Loader/tags`) abgefragt. Offizielle Versionen müssen zwingend den Prefix `core/v*` tragen.
 3. **Compiler:** Wird direkt von der DockerHub Tags API (`hub.docker.com/v2/.../toob-compiler/tags`) abgefragt. Jeder gebaute Docker-Container repräsentiert eine offizielle Toolchain-Umgebung.
 
-**Die Aggregation (`version_topology.json`):**
-Da wir nicht wollen, dass das System andauernd das API-Ratelimit von GitHub sprengt, läuft im Hintergrund die GitHub Action `version-topology.yml`. Sie bündelt alle diese dezentralen Repositories und Releases und generiert eine statische `version_topology.json`. In dieser Datei wird der exakte, verifizierte Stand des gesamten Ökosystems ("Official" und "Main-Branch") eingefroren.
+**Die Aggregation (`version_index.json`):**
+Da wir nicht wollen, dass das System andauernd das API-Ratelimit von GitHub sprengt, läuft im Hintergrund die GitHub Action `version-index.yml`. Sie bündelt alle diese dezentralen Repositories und Releases und generiert eine statische `version_index.json`. In dieser Datei wird der exakte, verifizierte Stand des gesamten Ökosystems ("Official" und "Main-Branch") eingefroren.
 
 **Die `registry.json` selbst:**
 Auch die `registry.json` wird exakt nach diesem Prinzip gehandhabt! Sie liegt im Root des Repositories und enthält ganz oben zwei wichtige Felder:
