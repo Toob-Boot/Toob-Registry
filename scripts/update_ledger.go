@@ -38,6 +38,9 @@ type Result struct {
 	CoreVersion     string `json:"core_version"`
 	CompilerVersion string `json:"compiler_version"`
 	Status          string `json:"status"`
+	StateHash       string `json:"state_hash"`
+}
+
 type InternalStateEntry struct {
 	Status     string `json:"status"`
 	LastTested string `json:"last_tested"`

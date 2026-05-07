@@ -73,10 +73,6 @@ type MatrixChip struct {
 	Versions map[string]MatrixVersion `json:"versions"`
 }
 
-type MatrixChip struct {
-	Versions map[string]MatrixVersion `json:"versions"`
-}
-
 type Matrix map[string]MatrixChip
 
 type InternalStateEntry struct {
@@ -359,18 +355,22 @@ func main() {
 					// Check Internal State for errors and retries
 					if entry, exists := internalState.Combinations[tupleKey]; exists {
 						if entry.Status == "FATAL_INFRA_ERROR" {
-							// Exceeded retry counts. Skip until manually reset.
-							continue 
+							// Gap #23: Auto-reset after 30 days
+							if t, err := time.Parse(time.RFC3339, entry.LastTested); err == nil {
+								if time.Since(t) < 30*24*time.Hour {
+									continue
+								}
+							} else {
+								continue
+							}
 						}
-						
+
 						if t, err := time.Parse(time.RFC3339, entry.LastTested); err == nil {
 							if entry.Status == "COMPILER_ERROR" {
-								// Wait 30 days before retrying a verified compiler incompatibility
 								if time.Since(t) < 30*24*time.Hour {
 									continue
 								}
 							} else if entry.Status == "INFRA_ERROR" {
-								// Retry infra errors (e.g. network timeouts) after 2 hours
 								if time.Since(t) < 2*time.Hour {
 									continue
 								}
