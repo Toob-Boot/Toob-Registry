@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"golang.org/x/mod/semver"
 )
@@ -72,7 +73,15 @@ type MatrixChip struct {
 	Versions map[string]MatrixVersion `json:"versions"`
 }
 
+type MatrixChip struct {
+	Versions map[string]MatrixVersion `json:"versions"`
+}
+
 type Matrix map[string]MatrixChip
+
+type FailedCache struct {
+	Combinations map[string]VerifiedCombination `json:"combinations"`
+}
 
 type Target struct {
 	Chip     string `json:"chip"`
@@ -241,6 +250,16 @@ func main() {
 		matrix = make(Matrix)
 	}
 
+	// Read Failed Cache (local to the Farm, ignored by Git)
+	failedData, err := os.ReadFile("failed_cache.json")
+	var failedCache FailedCache
+	if err == nil {
+		json.Unmarshal(failedData, &failedCache)
+	}
+	if failedCache.Combinations == nil {
+		failedCache.Combinations = make(map[string]VerifiedCombination)
+	}
+
 	targetChip := os.Getenv("CHIP")
 	cliVersions := getActiveCliVersions()
 	coreVersions := getActiveCoreVersions()
@@ -327,14 +346,26 @@ func main() {
 						}
 					}
 
-					if verifiedMap[tupleKey].Status != "VERIFIED" {
-						testQueue = append(testQueue, Target{
-							Chip:     chipKey,
-							Cli:      cli,
-							Core:     core,
-							Compiler: compiler,
-						})
+					if verifiedMap[tupleKey].Status == "VERIFIED" {
+						continue
 					}
+					
+					// If it's in the failed cache and tested recently (e.g., within 7 days), skip it.
+					// We don't want to spam test broken combinations every single hour.
+					if failed, exists := failedCache.Combinations[tupleKey]; exists {
+						if t, err := time.Parse(time.RFC3339, failed.LastTested); err == nil {
+							if time.Since(t) < 7*24*time.Hour {
+								continue
+							}
+						}
+					}
+
+					testQueue = append(testQueue, Target{
+						Chip:     chipKey,
+						Cli:      cli,
+						Core:     core,
+						Compiler: compiler,
+					})
 				}
 			}
 		}

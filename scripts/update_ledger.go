@@ -41,6 +41,10 @@ type Result struct {
 	StateHash       string `json:"state_hash"`
 }
 
+type FailedCache struct {
+	Combinations map[string]VerifiedCombination `json:"combinations"`
+}
+
 func main() {
 	matrixData, err := os.ReadFile("compatibility_matrix.json")
 	if err != nil {
@@ -66,6 +70,17 @@ func main() {
 		fmt.Println("No results found to merge.")
 		return
 	}
+
+	// Read failed_cache.json
+	failedData, _ := os.ReadFile("failed_cache.json")
+	var failedCache FailedCache
+	if len(failedData) > 0 {
+		json.Unmarshal(failedData, &failedCache)
+	}
+	if failedCache.Combinations == nil {
+		failedCache.Combinations = make(map[string]VerifiedCombination)
+	}
+	failedUpdated := false
 
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 	updated := false
@@ -184,12 +199,19 @@ func main() {
 				fmt.Printf("Appended VERIFIED state for chip %s@%s & %s to ledger.\n", res.Chip, chipManifestVer, tupleKey)
 			}
 		} else {
-			// If it's not VERIFIED, ensure it is NOT in the ledger.
+			// If it's not VERIFIED, ensure it is NOT in the public ledger.
 			if combExists {
 				delete(versionEntry.VerifiedCombinations, tupleKey)
 				updated = true
 				fmt.Printf("Pruned FAILED state for chip %s@%s & %s from ledger.\n", res.Chip, chipManifestVer, tupleKey)
 			}
+
+			// Add to local failed_cache
+			failedCache.Combinations[tupleKey] = VerifiedCombination{
+				Status:     res.Status,
+				LastTested: timestamp,
+			}
+			failedUpdated = true
 		}
 
 		if updated {
@@ -208,6 +230,15 @@ func main() {
 		}
 		fmt.Println("compatibility_matrix.json successfully updated.")
 	} else {
-		fmt.Println("No new hashes to append.")
+		fmt.Println("No new hashes to append to ledger.")
+	}
+
+	if failedUpdated {
+		fOut, _ := json.MarshalIndent(failedCache, "", "  ")
+		if err := os.WriteFile("failed_cache.json", fOut, 0644); err != nil {
+			log.Printf("Warning: Failed to write failed_cache.json: %v", err)
+		} else {
+			fmt.Println("failed_cache.json successfully updated.")
+		}
 	}
 }
