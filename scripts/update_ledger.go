@@ -196,7 +196,7 @@ func main() {
 			versionEntry.VerifiedCombinations = make(map[string]VerifiedCombination)
 		}
 
-		tupleKey := fmt.Sprintf("cli=%s::core=%s::compiler=%s", res.CliVersion, res.CoreVersion, res.CompilerVersion)
+		tupleKey := fmt.Sprintf("chip=%s::cli=%s::core=%s::compiler=%s", res.Chip, res.CliVersion, res.CoreVersion, res.CompilerVersion)
 
 		// Sweep and Prune: remove any existing non-VERIFIED statuses to reduce JSON bloat
 		for key, comb := range versionEntry.VerifiedCombinations {
