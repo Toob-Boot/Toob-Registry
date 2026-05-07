@@ -38,11 +38,14 @@ type Result struct {
 	CoreVersion     string `json:"core_version"`
 	CompilerVersion string `json:"compiler_version"`
 	Status          string `json:"status"`
-	StateHash       string `json:"state_hash"`
+type InternalStateEntry struct {
+	Status     string `json:"status"`
+	LastTested string `json:"last_tested"`
+	RetryCount int    `json:"retry_count"`
 }
 
-type FailedCache struct {
-	Combinations map[string]VerifiedCombination `json:"combinations"`
+type InternalState struct {
+	Combinations map[string]InternalStateEntry `json:"combinations"`
 }
 
 func main() {
@@ -71,16 +74,16 @@ func main() {
 		return
 	}
 
-	// Read failed_cache.json
-	failedData, _ := os.ReadFile("failed_cache.json")
-	var failedCache FailedCache
-	if len(failedData) > 0 {
-		json.Unmarshal(failedData, &failedCache)
+	// Read internal_state.json
+	stateData, _ := os.ReadFile("internal_state.json")
+	var internalState InternalState
+	if len(stateData) > 0 {
+		json.Unmarshal(stateData, &internalState)
 	}
-	if failedCache.Combinations == nil {
-		failedCache.Combinations = make(map[string]VerifiedCombination)
+	if internalState.Combinations == nil {
+		internalState.Combinations = make(map[string]InternalStateEntry)
 	}
-	failedUpdated := false
+	stateUpdated := false
 
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 	updated := false
@@ -198,6 +201,11 @@ func main() {
 				updated = true
 				fmt.Printf("Appended VERIFIED state for chip %s@%s & %s to ledger.\n", res.Chip, chipManifestVer, tupleKey)
 			}
+			// Prune from internal state if it exists
+			if _, exists := internalState.Combinations[tupleKey]; exists {
+				delete(internalState.Combinations, tupleKey)
+				stateUpdated = true
+			}
 		} else {
 			// If it's not VERIFIED, ensure it is NOT in the public ledger.
 			if combExists {
@@ -206,12 +214,23 @@ func main() {
 				fmt.Printf("Pruned FAILED state for chip %s@%s & %s from ledger.\n", res.Chip, chipManifestVer, tupleKey)
 			}
 
-			// Add to local failed_cache
-			failedCache.Combinations[tupleKey] = VerifiedCombination{
-				Status:     res.Status,
-				LastTested: timestamp,
+			// Add to internal state outbox
+			entry := internalState.Combinations[tupleKey]
+			entry.Status = res.Status
+			entry.LastTested = timestamp
+			
+			if res.Status == "INFRA_ERROR" {
+				entry.RetryCount++
+				if entry.RetryCount >= 2 {
+					entry.Status = "FATAL_INFRA_ERROR"
+					fmt.Printf("Escalated INFRA_ERROR to FATAL_INFRA_ERROR for %s\n", tupleKey)
+				}
+			} else {
+				entry.RetryCount = 0
 			}
-			failedUpdated = true
+			
+			internalState.Combinations[tupleKey] = entry
+			stateUpdated = true
 		}
 
 		if updated {
@@ -233,12 +252,12 @@ func main() {
 		fmt.Println("No new hashes to append to ledger.")
 	}
 
-	if failedUpdated {
-		fOut, _ := json.MarshalIndent(failedCache, "", "  ")
-		if err := os.WriteFile("failed_cache.json", fOut, 0644); err != nil {
-			log.Printf("Warning: Failed to write failed_cache.json: %v", err)
+	if stateUpdated {
+		sOut, _ := json.MarshalIndent(internalState, "", "  ")
+		if err := os.WriteFile("internal_state.json", sOut, 0644); err != nil {
+			log.Printf("Warning: Failed to write internal_state.json: %v", err)
 		} else {
-			fmt.Println("failed_cache.json successfully updated.")
+			fmt.Println("internal_state.json successfully updated.")
 		}
 	}
 }

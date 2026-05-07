@@ -79,8 +79,14 @@ type MatrixChip struct {
 
 type Matrix map[string]MatrixChip
 
-type FailedCache struct {
-	Combinations map[string]VerifiedCombination `json:"combinations"`
+type InternalStateEntry struct {
+	Status     string `json:"status"`
+	LastTested string `json:"last_tested"`
+	RetryCount int    `json:"retry_count"`
+}
+
+type InternalState struct {
+	Combinations map[string]InternalStateEntry `json:"combinations"`
 }
 
 type Target struct {
@@ -250,14 +256,14 @@ func main() {
 		matrix = make(Matrix)
 	}
 
-	// Read Failed Cache (local to the Farm, ignored by Git)
-	failedData, err := os.ReadFile("failed_cache.json")
-	var failedCache FailedCache
+	// Read Internal State (Git-tracked DB for pending/failed states)
+	stateData, err := os.ReadFile("internal_state.json")
+	var internalState InternalState
 	if err == nil {
-		json.Unmarshal(failedData, &failedCache)
+		json.Unmarshal(stateData, &internalState)
 	}
-	if failedCache.Combinations == nil {
-		failedCache.Combinations = make(map[string]VerifiedCombination)
+	if internalState.Combinations == nil {
+		internalState.Combinations = make(map[string]InternalStateEntry)
 	}
 
 	targetChip := os.Getenv("CHIP")
@@ -350,12 +356,24 @@ func main() {
 						continue
 					}
 					
-					// If it's in the failed cache and tested recently (e.g., within 7 days), skip it.
-					// We don't want to spam test broken combinations every single hour.
-					if failed, exists := failedCache.Combinations[tupleKey]; exists {
-						if t, err := time.Parse(time.RFC3339, failed.LastTested); err == nil {
-							if time.Since(t) < 7*24*time.Hour {
-								continue
+					// Check Internal State for errors and retries
+					if entry, exists := internalState.Combinations[tupleKey]; exists {
+						if entry.Status == "FATAL_INFRA_ERROR" {
+							// Exceeded retry counts. Skip until manually reset.
+							continue 
+						}
+						
+						if t, err := time.Parse(time.RFC3339, entry.LastTested); err == nil {
+							if entry.Status == "COMPILER_ERROR" {
+								// Wait 30 days before retrying a verified compiler incompatibility
+								if time.Since(t) < 30*24*time.Hour {
+									continue
+								}
+							} else if entry.Status == "INFRA_ERROR" {
+								// Retry infra errors (e.g. network timeouts) after 2 hours
+								if time.Since(t) < 2*time.Hour {
+									continue
+								}
 							}
 						}
 					}

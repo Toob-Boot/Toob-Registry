@@ -98,14 +98,9 @@ func worker(id int, targets <-chan Target, results chan<- bool) {
 	for t := range targets {
 		fmt.Printf("[Worker %d] Testing %s (CLI: %s, Core: %s, Compiler: %s)\n", id, t.Chip, t.Cli, t.Core, t.Compiler)
 		
-		status := "FAILED"
-		hash := "unknown"
-		
-		err := testTarget(id, t)
-		if err == nil {
-			status = "VERIFIED"
-		} else {
-			fmt.Printf("[Worker %d] Test FAILED: %v\n", id, err)
+		status, err := testTarget(id, t)
+		if err != nil {
+			fmt.Printf("[Worker %d] Test FAILED (%s): %v\n", id, status, err)
 		}
 
 		// Re-calculate hash for this specific target
@@ -126,14 +121,14 @@ func worker(id int, targets <-chan Target, results chan<- bool) {
 	}
 }
 
-func testTarget(workerId int, t Target) error {
+func testTarget(workerId int, t Target) (string, error) {
 	workDir := filepath.Join(os.TempDir(), fmt.Sprintf("matrix_worker_%d", workerId))
 	os.RemoveAll(workDir)
 	os.MkdirAll(workDir, 0755)
 
 	cliPath, err := ensureCliVersion(t.Cli)
 	if err != nil {
-		return err
+		return "INFRA_ERROR", fmt.Errorf("ensureCliVersion failed: %v", err)
 	}
 
 	// 1. Init dummy app
@@ -144,7 +139,7 @@ func testTarget(workerId int, t Target) error {
 	initCmd.Env = append(os.Environ(), "TOOB_REGISTRY_DIR="+cwd)
 	
 	if out, err := initCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("toob init failed: %s", string(out))
+		return "INFRA_ERROR", fmt.Errorf("toob init failed: %s", string(out))
 	}
 
 	// 2. Modify device.toml
@@ -153,7 +148,7 @@ func testTarget(workerId int, t Target) error {
 	
 	f, err := os.OpenFile(deviceToml, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return err
+		return "INFRA_ERROR", err
 	}
 	f.WriteString(fmt.Sprintf("\n[build]\ncore_sdk = \"%s\"\ncompiler = \"%s\"\n", t.Core, t.Compiler))
 	f.Close()
@@ -164,10 +159,10 @@ func testTarget(workerId int, t Target) error {
 	buildCmd.Env = append(os.Environ(), "TOOB_REGISTRY_DIR="+cwd, "TOOB_COMPILER_DIR=/tmp/Toob-Loader")
 	
 	if out, err := buildCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("toob build failed: %s", string(out))
+		return "COMPILER_ERROR", fmt.Errorf("toob build failed: %s", string(out))
 	}
 
-	return nil
+	return "VERIFIED", nil
 }
 
 func ensureCliVersion(version string) (string, error) {
@@ -217,12 +212,15 @@ func commitLedger() {
 	}
 
 	// Git Commit & Push
-	gitAdd := exec.Command("git", "add", "compatibility_matrix.json")
+	gitAdd := exec.Command("git", "add", "compatibility_matrix.json", "internal_state.json")
 	gitAdd.Run()
 
 	gitCommit := exec.Command("git", "commit", "-m", "chore(ci): matrix farm batch update [skip ci]")
 	if err := gitCommit.Run(); err == nil {
-		fmt.Println("Ledger batch committed. Pushing to origin...")
+		fmt.Println("Ledger batch committed. Rebase-Pulling and Pushing to origin...")
+		gitPull := exec.Command("git", "pull", "--rebase")
+		gitPull.Run()
+		
 		gitPush := exec.Command("git", "push")
 		gitPush.Run()
 	}
