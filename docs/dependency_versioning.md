@@ -136,7 +136,7 @@ Toob CLI Binary**.
 | Feld | Wert | Quelle |
 |------|------|--------|
 | **Wo** | GitHub Releases (`Toob-CLI-Release`) | `matrix_generator.go` → GitHub API `/releases` |
-| **Versionierung** | Oracle in `oracle-semver.yml` (ABI-Diff basiert) | Automatisch bei Push auf `main` |
+| **Versionierung** | Enforcer in `semver-enforcer.yml` (ABI-Diff basiert) | Automatisch bei Push auf `main` |
 | **Vererbt an** | Compiler Image (1:1 Mapping) | Docker-Build-Pipeline |
 
 #### Core SDK (Source of Truth: Git Tags)
@@ -144,7 +144,7 @@ Toob CLI Binary**.
 | Feld | Wert | Quelle |
 |------|------|--------|
 | **Wo** | Git Tags (`core/v*` in `Toob-Loader`) | `matrix_generator.go` → GitHub API `/tags` |
-| **Versionierung** | Oracle in `oracle-semver.yml` (ABI-Diff basiert) | Automatisch bei Push auf `main` |
+| **Versionierung** | Enforcer in `semver-enforcer.yml` (ABI-Diff basiert) | Automatisch bei Push auf `main` |
 | **Vererbt an** | Registry (indirekt über Matrix-Kombination) | — |
 
 #### Compiler Image (Source of Truth: DockerHub Tags)

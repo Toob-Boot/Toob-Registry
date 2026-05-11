@@ -10,7 +10,7 @@ Das Ökosystem besteht aus vier primären Release-Säulen. Jede Säule hat ihre 
 
 ### A. Core SDK (`Toob-Loader`)
 
-- **Wie wird released:** Ein Entwickler pusht einen Git-Tag mit dem Prefix `core/v*` (z.B. `core/v1.0.2`) **in das `Toob-Boot/Toob-Loader` Repository**. _(Hinweis: Alternativ kann der automatische ABI-Analyzer `oracle-semver.yml` diesen Tag pushen, wenn sich C-Code im Monorepo ändert)._
+- **Wie wird released:** Ein Entwickler pusht einen Git-Tag mit dem Prefix `core/v*` (z.B. `core/v1.0.2`) **in das `Toob-Boot/Toob-Loader` Repository**. _(Hinweis: Alternativ kann der automatische ABI-Analyzer `semver-enforcer.yml` diesen Tag pushen, wenn sich C-Code im Monorepo ändert)._
 - **Pipeline:** `.github/workflows/release-core.yml`
 - **Ablauf:**
   1. Packt den C-Code (`toobloader/`, `sdk/`, `common/`) in eine `.zip` Datei.
