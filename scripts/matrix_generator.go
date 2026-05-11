@@ -148,21 +148,20 @@ func fetchGitHubPages(url string) ([]map[string]interface{}, error) {
 	return results, nil
 }
 
-// getActiveCliVersions fetches releases from GitHub. Fallbacks to main.
+// getActiveCliVersions fetches all tagged releases from the CLI release repo.
+// Only immutable, tagged versions are returned — "main" is excluded because
+// it is a moving target whose test results become stale on the next commit.
 func getActiveCliVersions() []string {
 	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-CLI-Release/releases?per_page=100")
 	if err != nil {
-		return []string{"main"}
+		log.Printf("[MatrixGen] Warning: Could not fetch CLI releases: %v", err)
+		return nil
 	}
 	var versions []string
 	for _, item := range data {
 		if tag, ok := item["tag_name"].(string); ok {
 			versions = append(versions, tag)
 		}
-	}
-	versions = append(versions, "main")
-	if len(versions) == 0 {
-		return []string{"main"}
 	}
 	return versions
 }
@@ -174,11 +173,13 @@ func normalizeVersion(v string) string {
 	return v
 }
 
-// getActiveCoreVersions fetches tags from Toob-Loader repo. Fallbacks to main.
+// getActiveCoreVersions fetches all core/* tags from the Toob-Loader repo.
+// Only immutable, tagged versions are returned.
 func getActiveCoreVersions() []string {
 	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-Loader/tags?per_page=100")
 	if err != nil {
-		return []string{"main"}
+		log.Printf("[MatrixGen] Warning: Could not fetch Core tags: %v", err)
+		return nil
 	}
 	var versions []string
 	for _, item := range data {
@@ -188,7 +189,6 @@ func getActiveCoreVersions() []string {
 			}
 		}
 	}
-	versions = append(versions, "main")
 	return versions
 }
 

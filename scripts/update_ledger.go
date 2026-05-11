@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -78,13 +79,29 @@ func main() {
 		matrix = make(Matrix)
 	}
 
+	updated := false
+
+	// Migration: Purge all "main" entries from tuple keys.
+	// "main" is a moving target — its test results are meaningless.
+	for chipName, chipData := range matrix {
+		for ver, verData := range chipData.Versions {
+			for tupleKey := range verData.VerifiedCombinations {
+				if strings.Contains(tupleKey, "cli=main") || strings.Contains(tupleKey, "core=main") {
+					delete(verData.VerifiedCombinations, tupleKey)
+					fmt.Printf("Purged stale 'main' entry: %s / %s / %s\n", chipName, ver, tupleKey)
+					updated = true
+				}
+			}
+		}
+	}
+
 	// Read all result_*.json files
 	matches, err := filepath.Glob("result_*.json")
 	if err != nil {
 		log.Fatalf("FATAL: Error globbing results: %v", err)
 	}
 
-	if len(matches) == 0 {
+	if len(matches) == 0 && !updated {
 		fmt.Println("No results found to merge.")
 		return
 	}
@@ -127,7 +144,6 @@ func main() {
 	}
 
 	timestamp := time.Now().UTC().Format(time.RFC3339)
-	updated := false
 
 	for _, file := range matches {
 		data, err := os.ReadFile(file)
