@@ -11,7 +11,7 @@
         "verified_combinations": {
           "chip=esp32c6::cli=cli/v0.0.13::core=0.0.1::compiler=latest": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-12T11:03:26Z"
+            "last_tested": "2026-05-12T12:03:29Z"
           },
           "chip=esp32c6::cli=cli/v0.0.15::core=0.0.1::compiler=latest": {
             "status": "VERIFIED",
