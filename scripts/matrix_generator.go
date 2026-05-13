@@ -429,8 +429,21 @@ func main() {
 						Core:     core,
 						Compiler: compiler,
 					})
+
+					if len(testQueue) >= 256 {
+						break
+					}
+				}
+				if len(testQueue) >= 256 {
+					break
 				}
 			}
+			if len(testQueue) >= 256 {
+				break
+			}
+		}
+		if len(testQueue) >= 256 {
+			break
 		}
 	}
 
