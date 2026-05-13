@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -101,6 +102,7 @@ type Target struct {
 
 // fetchGitHubPages handles Link header pagination for GitHub API.
 func fetchGitHubPages(url string) ([]map[string]interface{}, error) {
+	client := &http.Client{Timeout: 15 * time.Second}
 	var results []map[string]interface{}
 	for url != "" {
 		req, err := http.NewRequest("GET", url, nil)
@@ -112,12 +114,27 @@ func fetchGitHubPages(url string) ([]map[string]interface{}, error) {
 			req.Header.Set("Authorization", "Bearer "+token)
 		}
 
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil || resp.StatusCode != 200 {
-			if resp != nil {
-				resp.Body.Close()
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("HTTP request failed: %w", err)
+		}
+
+		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
+			retryAfter := resp.Header.Get("Retry-After")
+			resp.Body.Close()
+			if retryAfter != "" {
+				if secs, err := strconv.Atoi(retryAfter); err == nil && secs > 0 {
+					log.Printf("[MatrixGen] Rate limited, waiting %ds", secs)
+					time.Sleep(time.Duration(secs) * time.Second)
+					continue
+				}
 			}
-			return nil, fmt.Errorf("failed to fetch")
+			return nil, fmt.Errorf("rate limited (HTTP %d)", resp.StatusCode)
+		}
+
+		if resp.StatusCode != 200 {
+			resp.Body.Close()
+			return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
 		}
 
 		body, _ := io.ReadAll(resp.Body)
