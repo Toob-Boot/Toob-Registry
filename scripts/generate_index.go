@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -56,11 +57,34 @@ func fetchGitHubPages(url string) ([]map[string]interface{}, error) {
 		}
 
 		resp, err := http.DefaultClient.Do(req)
-		if err != nil || resp.StatusCode != 200 {
-			if resp != nil {
-				resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch: %w", err)
+		}
+
+		if resp.StatusCode == 403 || resp.StatusCode == 429 {
+			if retryAfter := resp.Header.Get("Retry-After"); retryAfter != "" {
+				if seconds, err := strconv.Atoi(retryAfter); err == nil {
+					log.Printf("[Rate Limit] Sleeping for %d seconds...", seconds)
+					time.Sleep(time.Duration(seconds) * time.Second)
+					resp.Body.Close()
+					continue
+				}
+			} else if reset := resp.Header.Get("X-RateLimit-Reset"); reset != "" {
+				if resetUnix, err := strconv.ParseInt(reset, 10, 64); err == nil {
+					sleepDuration := time.Until(time.Unix(resetUnix, 0))
+					if sleepDuration > 0 {
+						log.Printf("[Rate Limit] Sleeping until %v...", time.Unix(resetUnix, 0))
+						time.Sleep(sleepDuration + 2*time.Second)
+						resp.Body.Close()
+						continue
+					}
+				}
 			}
-			return nil, fmt.Errorf("failed to fetch")
+		}
+
+		if resp.StatusCode != 200 {
+			resp.Body.Close()
+			return nil, fmt.Errorf("failed to fetch: HTTP %d", resp.StatusCode)
 		}
 
 		body, _ := io.ReadAll(resp.Body)

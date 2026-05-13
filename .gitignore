@@ -1,0 +1,5 @@
+ledger.db
+ledger.db-wal
+ledger.db-shm
+vendor/
+result_*.json.processing

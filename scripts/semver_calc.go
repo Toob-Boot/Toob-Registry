@@ -268,7 +268,14 @@ func main() {
 				if err == nil {
 					content := string(mBytes)
 					re := regexp.MustCompile(`"version"\s*:\s*"[^"]+"`)
-					newContent := re.ReplaceAllString(content, fmt.Sprintf(`"version": "%s"`, newVer))
+					replaced := false
+					newContent := re.ReplaceAllStringFunc(content, func(match string) string {
+						if !replaced {
+							replaced = true
+							return fmt.Sprintf(`"version": "%s"`, newVer)
+						}
+						return match
+					})
 					if os.Getenv("GITHUB_EVENT_NAME") != "pull_request" {
 						os.WriteFile(manifestPath, []byte(newContent), 0644)
 					} else {
@@ -367,7 +374,14 @@ func main() {
 				if err == nil {
 					content := string(mBytes)
 					re := regexp.MustCompile(`"version"\s*:\s*"[^"]+"`)
-					newContent := re.ReplaceAllString(content, fmt.Sprintf(`"version": "%s"`, newChipVer))
+					replaced := false
+					newContent := re.ReplaceAllStringFunc(content, func(match string) string {
+						if !replaced {
+							replaced = true
+							return fmt.Sprintf(`"version": "%s"`, newChipVer)
+						}
+						return match
+					})
 					if os.Getenv("GITHUB_EVENT_NAME") != "pull_request" {
 						os.WriteFile(manifestPath, []byte(newContent), 0644)
 					} else {
@@ -408,7 +422,14 @@ func main() {
 				if err == nil {
 					content := string(mBytes)
 					re := regexp.MustCompile(`"version"\s*:\s*"[^"]+"`)
-					newContent := re.ReplaceAllString(content, fmt.Sprintf(`"version": "%s"`, newVersion))
+					replaced := false
+					newContent := re.ReplaceAllStringFunc(content, func(match string) string {
+						if !replaced {
+							replaced = true
+							return fmt.Sprintf(`"version": "%s"`, newVersion)
+						}
+						return match
+					})
 					if os.Getenv("GITHUB_EVENT_NAME") != "pull_request" {
 						os.WriteFile(manifestPath, []byte(newContent), 0644)
 					} else {

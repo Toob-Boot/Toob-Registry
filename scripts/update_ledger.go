@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"hash/crc32"
@@ -9,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	_ "github.com/glebarez/go-sqlite"
 )
 
 func GenerateComboID(prefix, chip, cli, core, compiler string) string {
@@ -49,54 +52,143 @@ type Result struct {
 	StateHash       string `json:"state_hash"`
 }
 
-type InternalStateEntry struct {
-	ID              string `json:"id"`
-	Chip            string `json:"chip"`
-	CliVersion      string `json:"cli_version"`
-	CoreVersion     string `json:"core_version"`
-	CompilerVersion string `json:"compiler_version"`
-	Status          string `json:"status"`
-	LastTested      string `json:"last_tested"`
-	RetryCount      int    `json:"retry_count"`
-}
+func initDB() *sql.DB {
+	needsMigration := false
+	if _, err := os.Stat("ledger.db"); os.IsNotExist(err) {
+		needsMigration = true
+	}
 
-type InternalState struct {
-	Combinations map[string]InternalStateEntry `json:"combinations"`
-}
-
-func main() {
-	matrixData, err := os.ReadFile("compatibility_matrix.json")
+	db, err := sql.Open("sqlite", "ledger.db?_pragma=busy_timeout(10000)")
 	if err != nil {
-		log.Fatalf("FATAL: Error reading matrix: %v", err)
+		log.Fatalf("FATAL: Failed to open SQLite ledger.db: %v", err)
 	}
 
-	var matrix Matrix
-	if len(matrixData) > 0 {
-		if err := json.Unmarshal(matrixData, &matrix); err != nil {
-			log.Fatalf("FATAL: Error parsing matrix: %v", err)
-		}
-	} else {
-		matrix = make(Matrix)
+	_, err = db.Exec(`
+		PRAGMA journal_mode=WAL;
+		PRAGMA synchronous=NORMAL;
+
+		CREATE TABLE IF NOT EXISTS verified_combinations (
+			tuple_key TEXT PRIMARY KEY,
+			chip TEXT,
+			chip_version TEXT,
+			cli_version TEXT,
+			core_version TEXT,
+			compiler_version TEXT,
+			environment_hash TEXT,
+			dependencies_json TEXT,
+			status TEXT,
+			last_tested TEXT
+		);
+
+		CREATE TABLE IF NOT EXISTS internal_state (
+			job_id TEXT PRIMARY KEY,
+			chip TEXT,
+			cli_version TEXT,
+			core_version TEXT,
+			compiler_version TEXT,
+			status TEXT,
+			last_tested TEXT,
+			retry_count INTEGER
+		);
+	`)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to initialize schema: %v", err)
 	}
 
-	updated := false
+	if needsMigration {
+		importLegacyJSON(db)
+	}
 
-	// Migration: Purge all "main" entries from tuple keys.
-	// "main" is a moving target — its test results are meaningless.
-	for chipName, chipData := range matrix {
+	return db
+}
+
+func importLegacyJSON(db *sql.DB) {
+	fmt.Println("Migrating legacy compatibility_matrix.json to ledger.db...")
+	matrixData, err := os.ReadFile("compatibility_matrix.json")
+	if err != nil || len(matrixData) == 0 {
+		return
+	}
+
+	var matrix map[string]struct {
+		Versions map[string]struct {
+			EnvironmentHash string `json:"environment_hash"`
+			Dependencies    Dependencies `json:"dependencies"`
+			VerifiedCombinations map[string]struct {
+				Status     string `json:"status"`
+				LastTested string `json:"last_tested"`
+			} `json:"verified_combinations"`
+		} `json:"versions"`
+	}
+
+	if err := json.Unmarshal(matrixData, &matrix); err != nil {
+		fmt.Printf("Warning: Failed to parse legacy matrix: %v\n", err)
+		return
+	}
+
+	tx, _ := db.Begin()
+	stmt, _ := tx.Prepare(`INSERT INTO verified_combinations (tuple_key, chip, chip_version, cli_version, core_version, compiler_version, environment_hash, dependencies_json, status, last_tested) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+
+	for chip, chipData := range matrix {
 		for ver, verData := range chipData.Versions {
-			for tupleKey := range verData.VerifiedCombinations {
-				if strings.Contains(tupleKey, "cli=main") || strings.Contains(tupleKey, "core=main") {
-					delete(verData.VerifiedCombinations, tupleKey)
-					fmt.Printf("Purged stale 'main' entry: %s / %s / %s\n", chipName, ver, tupleKey)
-					updated = true
+			depsJSON, _ := json.Marshal(verData.Dependencies)
+			for tupleKey, comb := range verData.VerifiedCombinations {
+				parts := strings.Split(tupleKey, "::")
+				var cliVer, coreVer, compVer string
+				for _, p := range parts {
+					if strings.HasPrefix(p, "cli=") { cliVer = strings.TrimPrefix(p, "cli=") }
+					if strings.HasPrefix(p, "core=") { coreVer = strings.TrimPrefix(p, "core=") }
+					if strings.HasPrefix(p, "compiler=") { compVer = strings.TrimPrefix(p, "compiler=") }
 				}
+				stmt.Exec(tupleKey, chip, ver, cliVer, coreVer, compVer, verData.EnvironmentHash, string(depsJSON), comb.Status, comb.LastTested)
 			}
 		}
 	}
+	tx.Commit()
+	
+	stateData, err := os.ReadFile("internal_state.json")
+	if err == nil && len(stateData) > 0 {
+		var state struct {
+			Combinations map[string]struct {
+				ID string `json:"id"`
+				Chip string `json:"chip"`
+				CliVersion string `json:"cli_version"`
+				CoreVersion string `json:"core_version"`
+				CompilerVersion string `json:"compiler_version"`
+				Status string `json:"status"`
+				LastTested string `json:"last_tested"`
+				RetryCount int `json:"retry_count"`
+			} `json:"combinations"`
+		}
+		if err := json.Unmarshal(stateData, &state); err == nil {
+			tx2, _ := db.Begin()
+			stmt2, _ := tx2.Prepare(`INSERT INTO internal_state (job_id, chip, cli_version, core_version, compiler_version, status, last_tested, retry_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+			for jobID, comb := range state.Combinations {
+				stmt2.Exec(jobID, comb.Chip, comb.CliVersion, comb.CoreVersion, comb.CompilerVersion, comb.Status, comb.LastTested, comb.RetryCount)
+			}
+			tx2.Commit()
+		}
+	}
 
-	// Read all result_*.json files
-	matches, err := filepath.Glob("result_*.json")
+	fmt.Println("Legacy migration complete!")
+}
+
+func main() {
+	db := initDB()
+	defer db.Close()
+
+	updated := false
+	stateUpdated := false
+
+	// Migration: Purge all "main" entries efficiently
+	res, _ := db.Exec("DELETE FROM verified_combinations WHERE tuple_key LIKE '%core=main%' OR tuple_key LIKE '%cli=main%'")
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected > 0 {
+		fmt.Printf("Purged %d stale 'main' entries from DB.\n", rowsAffected)
+		updated = true
+	}
+
+	// Read all result_*.json.processing files
+	matches, err := filepath.Glob("result_*.json.processing")
 	if err != nil {
 		log.Fatalf("FATAL: Error globbing results: %v", err)
 	}
@@ -106,18 +198,7 @@ func main() {
 		return
 	}
 
-	// Read internal_state.json
-	stateData, _ := os.ReadFile("internal_state.json")
-	var internalState InternalState
-	if len(stateData) > 0 {
-		json.Unmarshal(stateData, &internalState)
-	}
-	if internalState.Combinations == nil {
-		internalState.Combinations = make(map[string]InternalStateEntry)
-	}
-	stateUpdated := false
-
-	// Read registry.json once instead of inside the loop
+	// Read registry.json
 	regData, err := os.ReadFile("registry.json")
 	if err != nil {
 		log.Fatalf("FATAL: Error reading registry: %v", err)
@@ -145,6 +226,35 @@ func main() {
 
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatalf("FATAL: Failed to begin transaction: %v", err)
+	}
+
+	stmtUpsertComb, _ := tx.Prepare(`
+		INSERT INTO verified_combinations (
+			tuple_key, chip, chip_version, cli_version, core_version, compiler_version, 
+			environment_hash, dependencies_json, status, last_tested
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(tuple_key) DO UPDATE SET 
+			status=excluded.status, 
+			last_tested=excluded.last_tested, 
+			environment_hash=excluded.environment_hash,
+			dependencies_json=excluded.dependencies_json
+	`)
+	stmtDeleteComb, _ := tx.Prepare(`DELETE FROM verified_combinations WHERE tuple_key = ?`)
+	stmtDeleteState, _ := tx.Prepare(`DELETE FROM internal_state WHERE job_id = ?`)
+	stmtUpsertState, _ := tx.Prepare(`
+		INSERT INTO internal_state (
+			job_id, chip, cli_version, core_version, compiler_version, status, last_tested, retry_count
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(job_id) DO UPDATE SET 
+			status=excluded.status, 
+			last_tested=excluded.last_tested, 
+			retry_count=excluded.retry_count
+	`)
+	stmtGetRetryCount, _ := tx.Prepare(`SELECT retry_count FROM internal_state WHERE job_id = ?`)
+
 	for _, file := range matches {
 		data, err := os.ReadFile(file)
 		if err != nil {
@@ -152,57 +262,35 @@ func main() {
 			continue
 		}
 
-		var res Result
-		if err := json.Unmarshal(data, &res); err != nil {
+		var result Result
+		if err := json.Unmarshal(data, &result); err != nil {
 			log.Printf("Warning: Failed to parse %s: %v", file, err)
 			continue
 		}
 
-		if res.Chip == "" || res.StateHash == "" || res.CliVersion == "" {
+		if result.Chip == "" || result.StateHash == "" || result.CliVersion == "" {
 			continue
 		}
-
-		if res.CoreVersion == "" {
-			res.CoreVersion = "main"
+		if result.CoreVersion == "" {
+			result.CoreVersion = "main"
 		}
-		if res.CompilerVersion == "" {
-			res.CompilerVersion = "latest"
-		}
-
-		chipEntry, chipExists := matrix[res.Chip]
-		if !chipExists {
-			chipEntry = MatrixChip{
-				Versions: make(map[string]MatrixVersion),
-			}
-			matrix[res.Chip] = chipEntry
+		if result.CompilerVersion == "" {
+			result.CompilerVersion = "latest"
 		}
 
 		chipManifestVer := "1.0.0"
 		var chipMetaDeps Dependencies
 
-		if chipMeta, ok := reg.Chips[res.Chip]; ok {
+		if chipMeta, ok := reg.Chips[result.Chip]; ok {
 			chipManifestVer = chipMeta.Version
-
-			// Resolve dependencies from registry
 			tcName := chipMeta.CompilerPrefix
 			if len(tcName) > 0 && tcName[len(tcName)-1] == '-' {
 				tcName = tcName[:len(tcName)-1]
 			}
-
-			tcVer := "unknown"
-			if tc, ok := reg.Toolchains[tcName]; ok {
-				tcVer = tc.Version
-			}
-
-			vVer := "unknown"
-			if v, ok := reg.Vendors[chipMeta.Vendor]; ok {
-				vVer = v.Version
-			}
-
-			aVer := "unknown"
-			if a, ok := reg.Archs[chipMeta.Arch]; ok {
-				aVer = a.Version
-			}
+			tcVer, vVer, aVer := "unknown", "unknown", "unknown"
+			if tc, ok := reg.Toolchains[tcName]; ok { tcVer = tc.Version }
+			if v, ok := reg.Vendors[chipMeta.Vendor]; ok { vVer = v.Version }
+			if a, ok := reg.Archs[chipMeta.Arch]; ok { aVer = a.Version }
 
 			chipMetaDeps = Dependencies{
 				Toolchain: fmt.Sprintf("%s@%s", tcName, tcVer),
@@ -210,104 +298,156 @@ func main() {
 				Arch:      fmt.Sprintf("%s@%s", chipMeta.Arch, aVer),
 			}
 		}
+		depsJSON, _ := json.Marshal(chipMetaDeps)
 
-		versionEntry, versionExists := chipEntry.Versions[chipManifestVer]
-		if !versionExists || versionEntry.EnvironmentHash != res.StateHash {
-			versionEntry = MatrixVersion{
-				EnvironmentHash:      res.StateHash,
-				Dependencies:         chipMetaDeps,
-				VerifiedCombinations: make(map[string]VerifiedCombination),
-			}
-		}
+		tupleKey := fmt.Sprintf("chip=%s::cli=%s::core=%s::compiler=%s", result.Chip, result.CliVersion, result.CoreVersion, result.CompilerVersion)
+		jobID := GenerateComboID("MT", result.Chip, result.CliVersion, result.CoreVersion, result.CompilerVersion)
 
-		if versionEntry.VerifiedCombinations == nil {
-			versionEntry.VerifiedCombinations = make(map[string]VerifiedCombination)
-		}
-
-		tupleKey := fmt.Sprintf("chip=%s::cli=%s::core=%s::compiler=%s", res.Chip, res.CliVersion, res.CoreVersion, res.CompilerVersion)
-		jobID := GenerateComboID("MT", res.Chip, res.CliVersion, res.CoreVersion, res.CompilerVersion)
-
-		// Sweep and Prune: remove any existing non-VERIFIED statuses to reduce JSON bloat
-		for key, comb := range versionEntry.VerifiedCombinations {
-			if comb.Status != "VERIFIED" {
-				delete(versionEntry.VerifiedCombinations, key)
+		if result.Status == "VERIFIED" {
+			_, err := stmtUpsertComb.Exec(
+				tupleKey, result.Chip, chipManifestVer, result.CliVersion, result.CoreVersion, result.CompilerVersion,
+				result.StateHash, string(depsJSON), result.Status, timestamp,
+			)
+			if err == nil {
 				updated = true
+				fmt.Printf("Appended VERIFIED state for chip %s@%s & %s to ledger.\n", result.Chip, chipManifestVer, tupleKey)
 			}
-		}
-
-		currentComb, combExists := versionEntry.VerifiedCombinations[tupleKey]
-
-		if res.Status == "VERIFIED" {
-			if !combExists || currentComb.LastTested != timestamp {
-				versionEntry.VerifiedCombinations[tupleKey] = VerifiedCombination{
-					Status:     res.Status,
-					LastTested: timestamp,
-				}
-				updated = true
-				fmt.Printf("Appended VERIFIED state for chip %s@%s & %s to ledger.\n", res.Chip, chipManifestVer, tupleKey)
-			}
-			// Prune from internal state if it exists
-			if _, exists := internalState.Combinations[jobID]; exists {
-				delete(internalState.Combinations, jobID)
+			res, _ := stmtDeleteState.Exec(jobID)
+			if aff, _ := res.RowsAffected(); aff > 0 {
 				stateUpdated = true
 			}
 		} else {
-			// If it's not VERIFIED, ensure it is NOT in the public ledger.
-			if combExists {
-				delete(versionEntry.VerifiedCombinations, tupleKey)
+			res, _ := stmtDeleteComb.Exec(tupleKey)
+			if aff, _ := res.RowsAffected(); aff > 0 {
 				updated = true
-				fmt.Printf("Pruned FAILED state for chip %s@%s & %s from ledger.\n", res.Chip, chipManifestVer, tupleKey)
+				fmt.Printf("Pruned FAILED state for chip %s@%s & %s from ledger.\n", result.Chip, chipManifestVer, tupleKey)
 			}
 
-			// Add to internal state outbox
-			entry := internalState.Combinations[jobID]
-			entry.ID = jobID
-			entry.Chip = res.Chip
-			entry.CliVersion = res.CliVersion
-			entry.CoreVersion = res.CoreVersion
-			entry.CompilerVersion = res.CompilerVersion
-			entry.Status = res.Status
-			entry.LastTested = timestamp
-
-			if res.Status == "INFRA_ERROR" {
-				entry.RetryCount++
-				if entry.RetryCount >= 2 {
-					entry.Status = "FATAL_INFRA_ERROR"
-					fmt.Printf("Escalated INFRA_ERROR to FATAL_INFRA_ERROR for %s\n", jobID)
-				}
-			} else {
-				entry.RetryCount = 0
+			retryCount := 0
+			err := stmtGetRetryCount.QueryRow(jobID).Scan(&retryCount)
+			if err == nil && result.Status == "INFRA_ERROR" {
+				retryCount++
+			} else if result.Status != "INFRA_ERROR" {
+				retryCount = 0
 			}
 
-			internalState.Combinations[jobID] = entry
-			stateUpdated = true
+			if result.Status == "INFRA_ERROR" && retryCount >= 2 {
+				result.Status = "FATAL_INFRA_ERROR"
+				fmt.Printf("Escalated INFRA_ERROR to FATAL_INFRA_ERROR for %s\n", jobID)
+			}
+
+			_, err = stmtUpsertState.Exec(
+				jobID, result.Chip, result.CliVersion, result.CoreVersion, result.CompilerVersion,
+				result.Status, timestamp, retryCount,
+			)
+			if err == nil {
+				stateUpdated = true
+			}
 		}
+	}
 
-		if updated {
-			if chipEntry.Versions == nil {
-				chipEntry.Versions = make(map[string]MatrixVersion)
-			}
-			chipEntry.Versions[chipManifestVer] = versionEntry
-			matrix[res.Chip] = chipEntry
+	tx.Commit()
+
+	for _, file := range matches {
+		if err := os.Remove(file); err != nil {
+			log.Printf("Warning: Failed to delete processed file %s: %v", file, err)
 		}
 	}
 
 	if updated {
-		out, _ := json.MarshalIndent(matrix, "", "  ")
-		if err := os.WriteFile("compatibility_matrix.json", out, 0644); err != nil {
-			log.Fatalf("FATAL: Failed to write ledger: %v", err)
-		}
-		fmt.Println("compatibility_matrix.json successfully updated.")
+		exportMatrix(db)
 	} else {
 		fmt.Println("No new hashes to append to ledger.")
 	}
 
 	if stateUpdated {
-		sOut, _ := json.MarshalIndent(internalState, "", "  ")
-		if err := os.WriteFile("internal_state.json", sOut, 0644); err != nil {
-			log.Printf("Warning: Failed to write internal_state.json: %v", err)
-		} else {
-			fmt.Println("internal_state.json successfully updated.")
+		exportInternalState(db)
+	}
+}
+
+func exportMatrix(db *sql.DB) {
+	rows, err := db.Query(`SELECT tuple_key, chip, chip_version, cli_version, core_version, compiler_version, environment_hash, dependencies_json, status, last_tested FROM verified_combinations`)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to query DB for export: %v", err)
+	}
+	defer rows.Close()
+
+	matrix := make(Matrix)
+
+	for rows.Next() {
+		var tupleKey, chip, chipVer, cliVer, coreVer, compVer, envHash, depsJSON, status, lastTested string
+		if err := rows.Scan(&tupleKey, &chip, &chipVer, &cliVer, &coreVer, &compVer, &envHash, &depsJSON, &status, &lastTested); err != nil {
+			continue
 		}
+
+		var deps Dependencies
+		json.Unmarshal([]byte(depsJSON), &deps)
+
+		chipEntry, chipExists := matrix[chip]
+		if !chipExists {
+			chipEntry = MatrixChip{Versions: make(map[string]MatrixVersion)}
+			matrix[chip] = chipEntry
+		}
+
+		versionEntry, versionExists := chipEntry.Versions[chipVer]
+		if !versionExists || versionEntry.EnvironmentHash != envHash {
+			versionEntry = MatrixVersion{
+				EnvironmentHash:      envHash,
+				Dependencies:         deps,
+				VerifiedCombinations: make(map[string]VerifiedCombination),
+			}
+		}
+
+		versionEntry.VerifiedCombinations[tupleKey] = VerifiedCombination{
+			Status:     status,
+			LastTested: lastTested,
+		}
+
+		chipEntry.Versions[chipVer] = versionEntry
+	}
+
+	out, _ := json.MarshalIndent(matrix, "", "  ")
+	if err := os.WriteFile("compatibility_matrix.json", out, 0644); err != nil {
+		log.Fatalf("FATAL: Failed to write ledger JSON: %v", err)
+	}
+	fmt.Println("compatibility_matrix.json successfully updated from SQLite.")
+}
+
+func exportInternalState(db *sql.DB) {
+	type InternalStateEntryJSON struct {
+		ID              string `json:"id"`
+		Chip            string `json:"chip"`
+		CliVersion      string `json:"cli_version"`
+		CoreVersion     string `json:"core_version"`
+		CompilerVersion string `json:"compiler_version"`
+		Status          string `json:"status"`
+		LastTested      string `json:"last_tested"`
+		RetryCount      int    `json:"retry_count"`
+	}
+	
+	type InternalStateJSON struct {
+		Combinations map[string]InternalStateEntryJSON `json:"combinations"`
+	}
+
+	rows, err := db.Query(`SELECT job_id, chip, cli_version, core_version, compiler_version, status, last_tested, retry_count FROM internal_state`)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	state := InternalStateJSON{
+		Combinations: make(map[string]InternalStateEntryJSON),
+	}
+
+	for rows.Next() {
+		var entry InternalStateEntryJSON
+		if err := rows.Scan(&entry.ID, &entry.Chip, &entry.CliVersion, &entry.CoreVersion, &entry.CompilerVersion, &entry.Status, &entry.LastTested, &entry.RetryCount); err == nil {
+			state.Combinations[entry.ID] = entry
+		}
+	}
+
+	out, _ := json.MarshalIndent(state, "", "  ")
+	if err := os.WriteFile("internal_state.json", out, 0644); err == nil {
+		fmt.Println("internal_state.json successfully updated from SQLite.")
 	}
 }
