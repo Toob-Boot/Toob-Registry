@@ -173,19 +173,19 @@ func normalizeVersion(v string) string {
 	return v
 }
 
-// getActiveCoreVersions fetches all core/* tags from the Toob-Loader repo.
-// Only immutable, tagged versions are returned.
+// getActiveCoreVersions fetches all core/* releases from the Toob-Loader repo.
+// Only officially published releases are returned.
 func getActiveCoreVersions() []string {
-	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-Loader/tags?per_page=100")
+	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-Loader/releases?per_page=100")
 	if err != nil {
-		log.Printf("[MatrixGen] Warning: Could not fetch Core tags: %v", err)
+		log.Printf("[MatrixGen] Warning: Could not fetch Core releases: %v", err)
 		return nil
 	}
 	var versions []string
 	for _, item := range data {
-		if name, ok := item["name"].(string); ok {
-			if strings.HasPrefix(name, "core/") {
-				versions = append(versions, normalizeVersion(name))
+		if tag, ok := item["tag_name"].(string); ok {
+			if strings.HasPrefix(tag, "core/") {
+				versions = append(versions, normalizeVersion(tag))
 			}
 		}
 	}

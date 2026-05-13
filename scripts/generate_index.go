@@ -115,17 +115,21 @@ func getCliVersions() []ComponentVersion {
 }
 
 func getCoreVersions() []ComponentVersion {
-	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-Loader/tags?per_page=100")
+	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-Loader/releases?per_page=100")
 	var versions []ComponentVersion
 	if err != nil {
 		return versions
 	}
 	for _, item := range data {
-		if name, ok := item["name"].(string); ok {
-			if strings.HasPrefix(name, "core/") || strings.HasPrefix(name, "v") {
+		if tag, ok := item["tag_name"].(string); ok {
+			if strings.HasPrefix(tag, "core/") {
+				htmlURL, _ := item["html_url"].(string)
+				if htmlURL == "" {
+					htmlURL = "https://github.com/Toob-Boot/Toob-Loader/releases/tag/" + tag
+				}
 				versions = append(versions, ComponentVersion{
-					Version: name,
-					Source:  "https://github.com/Toob-Boot/Toob-Loader/releases/tag/" + name,
+					Version: tag,
+					Source:  htmlURL,
 				})
 			}
 		}

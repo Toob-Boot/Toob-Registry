@@ -86,21 +86,18 @@ func getActiveCliVersions() []string {
 }
 
 func getActiveCoreVersions() []string {
-	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-Loader/tags?per_page=100")
+	data, err := fetchGitHubPages("https://api.github.com/repos/Toob-Boot/Toob-Loader/releases?per_page=100")
 	if err != nil {
-		log.Printf("Warning: Failed to fetch Core SDK tags: %v", err)
-		return []string{"main"}
+		log.Printf("Warning: Failed to fetch Core SDK releases: %v", err)
+		return nil
 	}
 	var versions []string
 	for _, item := range data {
-		if name, ok := item["name"].(string); ok {
-			if strings.HasPrefix(name, "core/") {
-				versions = append(versions, strings.TrimPrefix(name, "core/"))
+		if tag, ok := item["tag_name"].(string); ok {
+			if strings.HasPrefix(tag, "core/") {
+				versions = append(versions, strings.TrimPrefix(tag, "core/"))
 			}
 		}
-	}
-	if len(versions) == 0 {
-		versions = append(versions, "main")
 	}
 	return versions
 }
