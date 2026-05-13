@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-13T20:14:35Z",
+    "generated_at": "2026-05-13T20:19:59Z",
     "main_branch": {
         "chips": [
             {
@@ -102,6 +102,18 @@
             }
         ],
         "cli": [
+            {
+                "version": "cli/v0.2.2",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.2.2"
+            },
+            {
+                "version": "cli/v0.2.1",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.2.1"
+            },
+            {
+                "version": "cli/v0.2.0",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.2.0"
+            },
             {
                 "version": "cli/v0.0.15",
                 "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.0.15"
