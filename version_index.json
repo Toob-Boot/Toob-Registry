@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-07T22:32:11Z",
+    "generated_at": "2026-05-13T01:14:57Z",
     "main_branch": {
         "chips": [
             {
@@ -103,24 +103,25 @@
         ],
         "cli": [
             {
-                "version": "cli/v1.0.1",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v1.0.1"
+                "version": "cli/v0.0.15",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.0.15"
+            },
+            {
+                "version": "cli/v0.0.13",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.0.13"
             }
         ],
         "core_sdk": [
-            {
-                "version": "v1.0.1",
-                "source": "https://github.com/Toob-Boot/Toob-Loader/releases/tag/v1.0.1"
-            },
-            {
-                "version": "v1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Loader/releases/tag/v1.0.0"
-            },
             {
                 "version": "core/v0.0.1",
                 "source": "https://github.com/Toob-Boot/Toob-Loader/releases/tag/core/v0.0.1"
             }
         ],
-        "compiler": null
+        "compiler": [
+            {
+                "version": "v0.1.2",
+                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
+            }
+        ]
     }
 }
