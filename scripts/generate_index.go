@@ -200,7 +200,7 @@ func getRegistryVersions() []RegistryRelease {
 }
 
 func getCompilerVersions() []ComponentVersion {
-	url := "https://hub.docker.com/v2/repositories/repowatt/toob-compiler/tags/?page_size=100"
+	url := "https://hub.docker.com/v2/repositories/mannomannx/toob-compiler/tags/?page_size=100"
 	var versions []ComponentVersion
 
 	for url != "" {
@@ -224,9 +224,12 @@ func getCompilerVersions() []ComponentVersion {
 		}
 
 		for _, tag := range result.Results {
+			if tag.Name == "latest" {
+				continue
+			}
 			versions = append(versions, ComponentVersion{
 				Version: tag.Name,
-				Source:  "https://hub.docker.com/r/repowatt/toob-compiler/tags",
+				Source:  "https://hub.docker.com/r/mannomannx/toob-compiler/tags",
 			})
 		}
 

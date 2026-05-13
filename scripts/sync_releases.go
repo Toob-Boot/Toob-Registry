@@ -106,7 +106,7 @@ func getActiveCoreVersions() []string {
 }
 
 func getActiveCompilerVersions() []string {
-	url := "https://hub.docker.com/v2/repositories/repowatt/toob-compiler/tags/?page_size=100"
+	url := "https://hub.docker.com/v2/repositories/mannomannx/toob-compiler/tags/?page_size=100"
 	var versions []string
 	
 	for url != "" {
@@ -131,6 +131,9 @@ func getActiveCompilerVersions() []string {
 		}
 		
 		for _, tag := range result.Results {
+			if tag.Name == "latest" {
+				continue
+			}
 			versions = append(versions, tag.Name)
 		}
 		
@@ -142,7 +145,8 @@ func getActiveCompilerVersions() []string {
 	}
 	
 	if len(versions) == 0 {
-		return []string{"latest"}
+		log.Println("Warning: No pinned compiler versions found on DockerHub.")
+		return nil
 	}
 	return versions
 }
