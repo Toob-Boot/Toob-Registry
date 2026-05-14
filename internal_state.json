@@ -1,5 +1,16 @@
 {
   "combinations": {
+    "MT-58CC9684": {
+      "id": "MT-58CC9684",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.3.2",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.2",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-14T20:34:48Z",
+      "retry_count": 0
+    },
     "MT-B6C2F7A8": {
       "id": "MT-B6C2F7A8",
       "chip": "esp32c6",
