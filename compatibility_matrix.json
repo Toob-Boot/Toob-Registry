@@ -11,23 +11,23 @@
         "verified_combinations": {
           "chip=esp32c6@1.1.0::cli=cli/v0.0.13::core=0.0.1::compiler=v0.1.2": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T17:17:42Z"
+            "last_tested": "2026-05-14T17:20:41Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.0.15::core=0.0.1::compiler=v0.1.2": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T17:17:42Z"
+            "last_tested": "2026-05-14T17:20:41Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.2.0::core=0.0.1::compiler=v0.1.2": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T17:17:42Z"
+            "last_tested": "2026-05-14T17:20:41Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.2.1::core=0.0.1::compiler=v0.1.2": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T17:17:42Z"
+            "last_tested": "2026-05-14T17:20:41Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.2.2::core=0.0.1::compiler=v0.1.2": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T17:17:42Z"
+            "last_tested": "2026-05-14T17:20:41Z"
           }
         }
       }
