@@ -74,8 +74,8 @@ type VerifiedCombination struct {
 }
 
 type MatrixVersion struct {
-	EnvironmentHash     string                           `json:"environment_hash"`
-	Dependencies        Dependencies                     `json:"dependencies"`
+	EnvironmentHash      string                         `json:"environment_hash"`
+	Dependencies         Dependencies                   `json:"dependencies"`
 	VerifiedCombinations map[string]VerifiedCombination `json:"verified_combinations"`
 }
 
@@ -224,41 +224,41 @@ func getActiveCoreVersions() []string {
 func getActiveCompilerVersions() []string {
 	url := "https://hub.docker.com/v2/repositories/mannomannx/toob-compiler/tags/?page_size=100"
 	var versions []string
-	
+
 	for url != "" {
 		resp, err := http.Get(url)
 		if err != nil || resp.StatusCode != 200 {
 			break
 		}
-		
+
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		
+
 		var result struct {
 			Next    *string `json:"next"`
 			Results []struct {
 				Name string `json:"name"`
 			} `json:"results"`
 		}
-		
+
 		if err := json.Unmarshal(body, &result); err != nil {
 			break
 		}
-		
+
 		for _, tag := range result.Results {
 			if tag.Name == "latest" {
 				continue
 			}
 			versions = append(versions, tag.Name)
 		}
-		
+
 		if result.Next != nil {
 			url = *result.Next
 		} else {
 			url = ""
 		}
 	}
-	
+
 	if len(versions) == 0 {
 		log.Println("[MatrixGen] Warning: No pinned compiler versions found on DockerHub.")
 		return nil
@@ -322,7 +322,7 @@ func main() {
 	if len(compilerVersions) == 0 {
 		compilerVersions = getActiveCompilerVersions()
 	}
-	
+
 	// Read raw JSON blocks for canonical hashing
 	var rawReg struct {
 		Chips      map[string]json.RawMessage `json:"chips"`
@@ -348,7 +348,7 @@ func main() {
 		if len(tcName) > 0 && tcName[len(tcName)-1] == '-' {
 			tcName = tcName[:len(tcName)-1]
 		}
-		
+
 		if _, exists := registry.Toolchains[tcName]; !exists {
 			log.Printf("[MatrixGen] Skip %s: Toolchain %s not found in registry", chipKey, tcName)
 			continue
@@ -380,22 +380,17 @@ func main() {
 		// Calculate T - A (Target minus Actual)
 		matrixEntry, chipExists := matrix[chipKey]
 		var verifiedMap map[string]VerifiedCombination
-		
 		if chipExists {
-			log.Printf("[MatrixGen] Chip %s exists in matrix", chipKey)
 			if versionEntry, versionExists := matrixEntry.Versions[chip.Version]; versionExists && versionEntry.EnvironmentHash == hardwareHash {
-				log.Printf("[MatrixGen] Version and Hash match for %s", chipKey)
 				if versionEntry.VerifiedCombinations != nil {
 					verifiedMap = versionEntry.VerifiedCombinations
 				} else {
 					verifiedMap = make(map[string]VerifiedCombination)
 				}
 			} else {
-				log.Printf("[MatrixGen] Version/Hash mismatch for %s (VerExists: %v)", chipKey, versionExists)
 				verifiedMap = make(map[string]VerifiedCombination)
 			}
 		} else {
-			log.Printf("[MatrixGen] Chip %s NOT in matrix", chipKey)
 			verifiedMap = make(map[string]VerifiedCombination)
 		}
 
@@ -404,14 +399,13 @@ func main() {
 			for _, core := range coreVersions {
 				for _, compiler := range compilerVersions {
 					tupleKey := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", chipKey, chip.Version, cli, core, compiler)
-					
+
 					// SemVer Filtering for Core SDK
 					if chip.MinCoreSDK != "" && chip.MinCoreSDK != "main" && core != "main" {
 						vCore := "v" + normalizeVersion(core)
 						vMin := "v" + normalizeVersion(chip.MinCoreSDK)
 						if semver.IsValid(vCore) && semver.IsValid(vMin) {
 							if semver.Compare(vCore, vMin) < 0 {
-								log.Printf("[MatrixGen] Skip %s: Core %s < Min %s", tupleKey, core, chip.MinCoreSDK)
 								continue
 							}
 						}
@@ -423,7 +417,6 @@ func main() {
 						vMinC := "v" + normalizeVersion(chip.MinCompiler)
 						if semver.IsValid(vComp) && semver.IsValid(vMinC) {
 							if semver.Compare(vComp, vMinC) < 0 {
-								log.Printf("[MatrixGen] Skip %s: Compiler %s < Min %s", tupleKey, compiler, chip.MinCompiler)
 								continue
 							}
 						}
@@ -432,15 +425,13 @@ func main() {
 					if verifiedMap[tupleKey].Status == "VERIFIED" {
 						continue
 					}
-					
+
 					// Check Internal State using job ID to match ledger keys
 					jobID := GenerateComboID("MT", chipKey, chip.Version, cli, core, compiler)
 					if entry, exists := internalState.Combinations[jobID]; exists {
-						log.Printf("[MatrixGen] InternalState exists for %s: %s", jobID, entry.Status)
 						if entry.Status == "FATAL_INFRA_ERROR" {
 							if t, err := time.Parse(time.RFC3339, entry.LastTested); err == nil {
 								if time.Since(t) < 30*24*time.Hour {
-									log.Printf("[MatrixGen] Skip %s: FATAL_INFRA_ERROR too recent", tupleKey)
 									continue
 								}
 							} else {
