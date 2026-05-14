@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-14T18:43:37Z",
+    "generated_at": "2026-05-14T18:51:17Z",
     "main_branch": {
         "chips": [
             {
@@ -31,6 +31,11 @@
         ],
         "integrations": [
             {
+                "name": "baremetal",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
+            },
+            {
                 "name": "espidf",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/espidf"
@@ -39,11 +44,6 @@
                 "name": "zephyr",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/zephyr"
-            },
-            {
-                "name": "baremetal",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
             }
         ]
     },
@@ -122,6 +122,10 @@
         ],
         "cli": [
             {
+                "version": "cli/v0.3.1",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.3.1"
+            },
+            {
                 "version": "cli/v0.2.2",
                 "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.2.2"
             },
@@ -149,6 +153,10 @@
             }
         ],
         "compiler": [
+            {
+                "version": "v1.1.2",
+                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
+            },
             {
                 "version": "v1.1.0",
                 "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
