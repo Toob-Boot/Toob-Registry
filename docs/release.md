@@ -31,10 +31,18 @@ SemVer Enforcer (GitHub Actions)
      ├── compiler/vX.Y.Z tag ──► CI Server (act) ──► release-compiler.yml
      │                                                      │
      │                                                      ▼
-     │                                               Docker Hub push
+     │                                              Push vX.Y.Z-rc to Docker Hub
+     │                                              + Draft Release on Toob-Loader
+     │                                                      │
+     │                                                 [Manual Publish]
+     │                                                      │
+     │                                                      ▼
+     │                                           compiler-promote.yml (GitHub Actions)
+     │                                           Retag → vX.Y.Z + latest
      │
      └── core/vX.Y.Z tag ──► CI Server (act) ──► release-core.yml
 ```
+
 
 **Key constraint:** Tags pushed by GitHub Actions do not trigger webhooks. The CI server must be notified manually or via `repository_dispatch` for compiler and core releases.
 
@@ -69,8 +77,6 @@ git push origin cli/vX.Y.Z
 
 ---
 
-## 2. Compiler Image
-
 **Source:** `compiler/compiler_manifest.json` + `cli/.pipeline-repo/Dockerfile.compiler`.  
 **Distribution:** `mannomannx/toob-compiler` on Docker Hub.
 
@@ -88,11 +94,15 @@ git push origin cli/vX.Y.Z
 2. Compares manifest against last `compiler/v*` tag, determines bump
 3. Writes new `compiler_version`, commits `[skip ci]`, pushes tag
 4. CI server runs `release-compiler.yml` via `act`:
-   - Reads CLI version, protocol version from manifest
    - Builds Docker image with pinned CLI binary
-   - Pushes to Docker Hub as `vX.Y.Z` + `latest`
+   - Pushes to Docker Hub as `vX.Y.Z-rc` (release candidate)
+   - Creates **draft** release on `Toob-Loader`
+5. **Manual step:** Publish the draft release on GitHub
+6. Publishing triggers `compiler-promote.yml` (GitHub Actions):
+   - Retags `vX.Y.Z-rc` → `vX.Y.Z` + `latest` on Docker Hub
    - Updates `compiler_version` in manifest, commits `[skip ci]`
    - Triggers `version-index.yml` in Registry
+   - Removes `-rc` tag from Docker Hub
 
 ### Manual Release
 
@@ -105,6 +115,9 @@ git push origin compiler/vX.Y.Z
 ```
 
 > **Important:** The CLI version in the manifest must point to a **published** GitHub Release. Draft releases don't have downloadable binaries.
+
+> **Prerequisite:** `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` must be configured as GitHub repo secrets for the promotion workflow.
+
 
 ---
 
