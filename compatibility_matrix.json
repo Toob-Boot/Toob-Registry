@@ -5,43 +5,26 @@
         "environment_hash": "c3099991b95315233b8ea5dadc2cab170d139b30e1ef1164b90ed80cfa32930c",
         "dependencies": {
           "toolchain": "riscv32-esp-elf@13.2.0_20230928",
+          "toolchain_version": "",
           "vendor": "esp@1.0.1",
-          "arch": "riscv32@1.0.0"
+          "vendor_version": "",
+          "arch": "riscv32@1.0.0",
+          "arch_version": ""
         },
         "verified_combinations": {
-          "chip=esp32c6@1.1.0::cli=cli/v0.0.13::core=0.0.1::compiler=v0.1.2": {
-            "status": "VERIFIED",
-            "last_tested": "2026-05-14T21:26:51Z"
-          },
           "chip=esp32c6@1.1.0::cli=cli/v0.0.13::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
             "last_tested": "2026-05-14T21:20:03Z"
           },
-          "chip=esp32c6@1.1.0::cli=cli/v0.0.15::core=0.0.1::compiler=v0.1.2": {
-            "status": "VERIFIED",
-            "last_tested": "2026-05-14T21:26:48Z"
-          },
           "chip=esp32c6@1.1.0::cli=cli/v0.0.15::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
             "last_tested": "2026-05-14T21:26:48Z"
-          },
-          "chip=esp32c6@1.1.0::cli=cli/v0.2.0::core=0.0.1::compiler=v0.1.2": {
-            "status": "VERIFIED",
-            "last_tested": "2026-05-14T21:19:56Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.2.0::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
             "last_tested": "2026-05-14T21:26:48Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.2.1::core=0.0.1::compiler=v1.1.4": {
-            "status": "VERIFIED",
-            "last_tested": "2026-05-14T21:26:48Z"
-          },
-          "chip=esp32c6@1.1.0::cli=cli/v0.2.2::core=0.0.1::compiler=v0.1.2": {
-            "status": "VERIFIED",
-            "last_tested": "2026-05-14T19:41:48Z"
-          },
-          "chip=esp32c6@1.1.0::cli=cli/v0.2.2::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
             "last_tested": "2026-05-14T21:26:48Z"
           },
