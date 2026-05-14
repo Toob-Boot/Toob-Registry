@@ -1,0 +1,5 @@
+{
+    "name": "espidf",
+    "version": "1.0.0",
+    "description": "ESP-IDF Integration Hooks"
+}

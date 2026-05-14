@@ -99,6 +99,20 @@ Toob CLI Binary**.
 }
 ```
 
+#### Integrations
+| Feld | Wert | Quelle |
+|------|------|--------|
+| **Pfad** | `integrations/{name}/integration_manifest.json` | Dateisystem |
+| **Version** | `1.0.0` | Manuell ODER auto-bumped durch `semver_calc.go` |
+| **Abhängig von** | Nichts | — |
+| **Vererbt an** | Registry (über `registry.json` Aggregation) | Nicht an Chips, rein informativ für CLI (`toob init`) |
+
+```json
+// integrations/zephyr/integration_manifest.json
+{ "name": "zephyr", "version": "1.0.0", "description": "Zephyr RTOS Integration" }
+```
+**Code-Dateien:** `toob_hooks.c`, `app.overlay`, `INTEGRATION_GUIDE.md`
+
 ---
 
 ### Schicht 1: Chip (aggregiert Schicht 0)

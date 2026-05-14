@@ -47,6 +47,13 @@ type ArchEntry struct {
 	Description string `json:"description"`
 }
 
+type IntegrationEntry struct {
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+}
+
 type EcosystemIndex struct {
 	Cli      []string `json:"cli"`
 	CoreSDK  []string `json:"core_sdk"`
@@ -61,6 +68,7 @@ type Registry struct {
 	Toolchains      map[string]ToolchainEntry `json:"toolchains"`
 	Vendors         map[string]VendorEntry    `json:"vendors"`
 	Archs           map[string]ArchEntry      `json:"archs"`
+	Integrations    map[string]IntegrationEntry `json:"integrations"`
 }
 
 func main() {
@@ -101,6 +109,12 @@ func main() {
 		oldArchs = make(map[string]ArchEntry)
 	}
 	newArchs := make(map[string]ArchEntry)
+
+	oldIntegrations := registry.Integrations
+	if oldIntegrations == nil {
+		oldIntegrations = make(map[string]IntegrationEntry)
+	}
+	newIntegrations := make(map[string]IntegrationEntry)
 
 	// Read Matrix
 	type HistoryEntry struct {
@@ -192,6 +206,32 @@ func main() {
 			}
 			manifest.Path = filepath.ToSlash(filepath.Join(archDir, aName))
 			newArchs[aName] = manifest
+		}
+	}
+
+	// Walk integrations directory
+	integrationDir := "integrations"
+	iEntries, err := os.ReadDir(integrationDir)
+	if err == nil {
+		for _, entry := range iEntries {
+			if !entry.IsDir() {
+				continue
+			}
+			iName := entry.Name()
+			iPath := filepath.Join(integrationDir, iName, "integration_manifest.json")
+			mdata, err := os.ReadFile(iPath)
+			if err != nil {
+				continue
+			}
+			var manifest IntegrationEntry
+			if err := json.Unmarshal(mdata, &manifest); err != nil {
+				log.Fatalf("FATAL: Error parsing %s: %v", iPath, err)
+			}
+			if manifest.Name == "" || manifest.Version == "" {
+				log.Fatalf("FATAL: Integration manifest '%s' is missing 'name' or 'version'", iPath)
+			}
+			manifest.Path = filepath.ToSlash(filepath.Join(integrationDir, iName))
+			newIntegrations[iName] = manifest
 		}
 	}
 
@@ -303,6 +343,7 @@ func main() {
 	registry.Toolchains = newToolchains
 	registry.Vendors = newVendors
 	registry.Archs = newArchs
+	registry.Integrations = newIntegrations
 
 	// Read Releases Index
 	releasesData, err := os.ReadFile("releases.json")
@@ -319,7 +360,8 @@ func main() {
 	changed := !reflect.DeepEqual(oldChips, newChips) || 
 	           !reflect.DeepEqual(oldToolchains, newToolchains) || 
 			   !reflect.DeepEqual(oldVendors, newVendors) || 
-			   !reflect.DeepEqual(oldArchs, newArchs)
+			   !reflect.DeepEqual(oldArchs, newArchs) ||
+			   !reflect.DeepEqual(oldIntegrations, newIntegrations)
 
 	if err == nil {
 		// Only consider releases changed if we actually read a new releases.json

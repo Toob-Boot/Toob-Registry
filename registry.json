@@ -1,6 +1,6 @@
 {
     "format_version": 1,
-    "registry_version": "v1.0.8",
+    "registry_version": "v1.0.9",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
@@ -45,6 +45,26 @@
             "path": "arch/riscv32",
             "version": "1.0.0",
             "description": "RISC-V 32-bit Architecture Support"
+        }
+    },
+    "integrations": {
+        "baremetal": {
+            "name": "baremetal",
+            "path": "integrations/baremetal",
+            "version": "1.0.0",
+            "description": "Baremetal Integration Hooks"
+        },
+        "espidf": {
+            "name": "espidf",
+            "path": "integrations/espidf",
+            "version": "1.0.0",
+            "description": "ESP-IDF Integration Hooks"
+        },
+        "zephyr": {
+            "name": "zephyr",
+            "path": "integrations/zephyr",
+            "version": "1.0.0",
+            "description": "Zephyr RTOS Integration Hooks"
         }
     }
 }

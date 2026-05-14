@@ -1,0 +1,4 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+# Note: Toob-Boot (Stage 0/1) resides at 0x0000.
+nvs,      data, nvs,     0x9000,  0x4000,
+factory,  app,  factory, 0x10000, 2M,

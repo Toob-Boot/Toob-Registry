@@ -19,10 +19,11 @@ type ComponentVersion struct {
 }
 
 type InternalTopology struct {
-	Chips      []ComponentVersion `json:"chips"`
-	Archs      []ComponentVersion `json:"archs"`
-	Vendors    []ComponentVersion `json:"vendors"`
-	Toolchains []ComponentVersion `json:"toolchains"`
+	Chips        []ComponentVersion `json:"chips"`
+	Archs        []ComponentVersion `json:"archs"`
+	Vendors      []ComponentVersion `json:"vendors"`
+	Toolchains   []ComponentVersion `json:"toolchains"`
+	Integrations []ComponentVersion `json:"integrations"`
 }
 
 type RegistryRelease struct {
@@ -186,10 +187,11 @@ func getRegistryVersions() []RegistryRelease {
 			if err == nil && resp.StatusCode == 200 {
 				body, _ := io.ReadAll(resp.Body)
 				var registry struct {
-					Chips      map[string]struct{ Version string } `json:"chips"`
-					Archs      map[string]struct{ Version string } `json:"archs"`
-					Vendors    map[string]struct{ Version string } `json:"vendors"`
-					Toolchains map[string]struct{ Version string } `json:"toolchains"`
+					Chips        map[string]struct{ Version string } `json:"chips"`
+					Archs        map[string]struct{ Version string } `json:"archs"`
+					Vendors      map[string]struct{ Version string } `json:"vendors"`
+					Toolchains   map[string]struct{ Version string } `json:"toolchains"`
+					Integrations map[string]struct{ Version string } `json:"integrations"`
 				}
 				if err := json.Unmarshal(body, &registry); err == nil {
 					for cName, cItem := range registry.Chips {
@@ -214,6 +216,12 @@ func getRegistryVersions() []RegistryRelease {
 						release.Internal.Toolchains = append(release.Internal.Toolchains, ComponentVersion{
 							Name: cName, Version: cItem.Version,
 							Source: fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/%s/toolchains/%s", name, cName),
+						})
+					}
+					for cName, cItem := range registry.Integrations {
+						release.Internal.Integrations = append(release.Internal.Integrations, ComponentVersion{
+							Name: cName, Version: cItem.Version,
+							Source: fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/%s/integrations/%s", name, cName),
 						})
 					}
 				}
@@ -281,10 +289,11 @@ func main() {
 	regData, err := os.ReadFile("registry.json")
 	if err == nil {
 		var registry struct {
-			Chips      map[string]struct{ Version string } `json:"chips"`
-			Archs      map[string]struct{ Version string } `json:"archs"`
-			Vendors    map[string]struct{ Version string } `json:"vendors"`
-			Toolchains map[string]struct{ Version string } `json:"toolchains"`
+			Chips        map[string]struct{ Version string } `json:"chips"`
+			Archs        map[string]struct{ Version string } `json:"archs"`
+			Vendors      map[string]struct{ Version string } `json:"vendors"`
+			Toolchains   map[string]struct{ Version string } `json:"toolchains"`
+			Integrations map[string]struct{ Version string } `json:"integrations"`
 		}
 		if err := json.Unmarshal(regData, &registry); err == nil {
 			for name, item := range registry.Chips {
@@ -313,6 +322,13 @@ func main() {
 					Name:    name,
 					Version: item.Version,
 					Source:  fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/main/toolchains/%s", name),
+				})
+			}
+			for name, item := range registry.Integrations {
+				topology.MainBranch.Integrations = append(topology.MainBranch.Integrations, ComponentVersion{
+					Name:    name,
+					Version: item.Version,
+					Source:  fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/%s", name),
 				})
 			}
 		}

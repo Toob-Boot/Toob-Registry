@@ -301,10 +301,11 @@ func main() {
 	}
 
 	var reg struct {
-		Chips      map[string]ChipManifest `json:"chips"`
-		Toolchains map[string]interface{}  `json:"toolchains"`
-		Vendors    map[string]interface{}  `json:"vendors"`
-		Archs      map[string]interface{}  `json:"archs"`
+		Chips        map[string]ChipManifest `json:"chips"`
+		Toolchains   map[string]interface{}  `json:"toolchains"`
+		Vendors      map[string]interface{}  `json:"vendors"`
+		Archs        map[string]interface{}  `json:"archs"`
+		Integrations map[string]interface{}  `json:"integrations"`
 	}
 	json.Unmarshal(regData, &reg)
 
@@ -317,6 +318,9 @@ func main() {
 	}
 	for tc := range reg.Toolchains {
 		checkDep("toolchains", tc)
+	}
+	for i := range reg.Integrations {
+		checkDep("integrations", i)
 	}
 
 	// Gap 6: Read chips directly from the directory to detect completely new chips

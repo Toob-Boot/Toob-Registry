@@ -9,6 +9,7 @@ on:
       - "toolchains/**"
       - "vendor/**"
       - "arch/**"
+      - "integrations/**"
   workflow_dispatch:
   workflow_run:
     workflows: ["Registry Auto-Release"]

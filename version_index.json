@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-13T20:19:59Z",
+    "generated_at": "2026-05-13T23:57:06Z",
     "main_branch": {
         "chips": [
             {
@@ -27,6 +27,23 @@
                 "name": "riscv32-esp-elf",
                 "version": "13.2.0_20230928",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/toolchains/riscv32-esp-elf"
+            }
+        ],
+        "integrations": [
+            {
+                "name": "baremetal",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
+            },
+            {
+                "name": "espidf",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/espidf"
+            },
+            {
+                "name": "zephyr",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/zephyr"
             }
         ]
     },
@@ -63,7 +80,8 @@
                             "version": "13.2.0_20230928",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/toolchains/riscv32-esp-elf"
                         }
-                    ]
+                    ],
+                    "integrations": null
                 }
             },
             {
@@ -97,7 +115,8 @@
                             "version": "13.2.0_20230928",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/toolchains/riscv32-esp-elf"
                         }
-                    ]
+                    ],
+                    "integrations": null
                 }
             }
         ],
