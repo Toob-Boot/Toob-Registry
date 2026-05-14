@@ -37,6 +37,10 @@ find_program(CMAKE_STRIP NAMES ${TOOLCHAIN_PREFIX}strip)
 # Verhindert, dass CMake beim initialen Compiler-Check versucht, ohne 
 # fertiges RISC-V Linker-Script ein komplettes .out Executable zu bauen (was fehlschlägt).
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+# Zusätzlicher Bypass: Der default -march des Compilers verursacht Assembler-Fehler
+# wenn keine konkreten Flags übergeben werden.
+set(CMAKE_C_COMPILER_WORKS 1)
+set(CMAKE_ASM_COMPILER_WORKS 1)
 
 # ------------------------------------------------------------------------------
 # 3. Architektur-unabhängige Bare-Metal Compiler/Linker Flags
