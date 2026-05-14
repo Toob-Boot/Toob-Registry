@@ -1,58 +1,36 @@
 {
   "combinations": {
-    "MT-6BC04A28": {
-      "id": "MT-6BC04A28",
-      "chip": "esp32c6",
-      "chip_version": "1.1.0",
-      "cli_version": "cli/v0.0.13",
-      "core_version": "0.0.1",
-      "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-14T17:11:56Z",
-      "retry_count": 0
-    },
-    "MT-9476BA9E": {
-      "id": "MT-9476BA9E",
-      "chip": "esp32c6",
-      "chip_version": "1.1.0",
-      "cli_version": "cli/v0.2.2",
-      "core_version": "0.0.1",
-      "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-14T17:11:56Z",
-      "retry_count": 0
-    },
-    "MT-D0D79F86": {
-      "id": "MT-D0D79F86",
+    "MT-03B9D71A": {
+      "id": "MT-03B9D71A",
       "chip": "esp32c6",
       "chip_version": "1.1.0",
       "cli_version": "cli/v0.2.1",
       "core_version": "0.0.1",
-      "compiler_version": "v0.1.2",
+      "compiler_version": "v1.1.0",
       "status": "INFRA_ERROR",
-      "last_tested": "2026-05-14T17:11:56Z",
+      "last_tested": "2026-05-14T18:39:03Z",
       "retry_count": 0
     },
-    "MT-E2820018": {
-      "id": "MT-E2820018",
-      "chip": "esp32c6",
-      "chip_version": "1.1.0",
-      "cli_version": "cli/v0.0.15",
-      "core_version": "0.0.1",
-      "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-14T17:11:56Z",
-      "retry_count": 0
-    },
-    "MT-ECB77C8E": {
-      "id": "MT-ECB77C8E",
+    "MT-3FD93412": {
+      "id": "MT-3FD93412",
       "chip": "esp32c6",
       "chip_version": "1.1.0",
       "cli_version": "cli/v0.2.0",
       "core_version": "0.0.1",
-      "compiler_version": "v0.1.2",
+      "compiler_version": "v1.1.0",
       "status": "INFRA_ERROR",
-      "last_tested": "2026-05-14T17:11:56Z",
+      "last_tested": "2026-05-14T18:39:03Z",
+      "retry_count": 0
+    },
+    "MT-4718F202": {
+      "id": "MT-4718F202",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.2.2",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.0",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-14T18:39:03Z",
       "retry_count": 0
     }
   }
