@@ -28,21 +28,20 @@ SemVer Enforcer (GitHub Actions)
      │                              ▼
      │                     Enforcer runs again → compiler/vX.Y.Z tag
      │
-     ├── compiler/vX.Y.Z tag ──► CI Server (act) ──► release-compiler.yml
-     │                                                      │
-     │                                                      ▼
-     │                                              Push vX.Y.Z-rc to Docker Hub
-     │                                              + Draft Release on Toob-Loader
-     │                                                      │
-     │                                                 [Manual Publish]
-     │                                                      │
-     │                                                      ▼
-     │                                           compiler-promote.yml (GitHub Actions)
-     │                                           Retag → vX.Y.Z + latest
+     ├── compiler/vX.Y.Z tag + Draft Release on Toob-Loader
+     │                              │
+     │                         [Manual Publish]
+     │                              │
+     │                              ▼
+     │                     compiler-promote.yml (GitHub Actions)
+     │                     sends webhook to CI Server
+     │                              │
+     │                              ▼
+     │                     CI Server (act) ──► release-compiler.yml
+     │                     Build + Push vX.Y.Z + latest to Docker Hub
      │
      └── core/vX.Y.Z tag ──► CI Server (act) ──► release-core.yml
 ```
-
 
 **Key constraint:** Tags pushed by GitHub Actions do not trigger webhooks. The CI server must be notified manually or via `repository_dispatch` for compiler and core releases.
 
@@ -82,27 +81,27 @@ git push origin cli/vX.Y.Z
 
 ### Manifest Fields
 
-| Field | Bump Level |
-|-------|-----------|
-| `protocol_version` | MAJOR |
-| `base_image`, `system_packages` | MINOR |
-| Everything else | PATCH |
+| Field                           | Bump Level |
+| ------------------------------- | ---------- |
+| `protocol_version`              | MAJOR      |
+| `base_image`, `system_packages` | MINOR      |
+| Everything else                 | PATCH      |
 
 ### Automatic Flow
 
 1. Enforcer detects changes in `compiler/*`, `Dockerfile.compiler`, or `toob-ci-build.sh`
 2. Compares manifest against last `compiler/v*` tag, determines bump
 3. Writes new `compiler_version`, commits `[skip ci]`, pushes tag
-4. CI server runs `release-compiler.yml` via `act`:
-   - Builds Docker image with pinned CLI binary
-   - Pushes to Docker Hub as `vX.Y.Z-rc` (release candidate)
-   - Creates **draft** release on `Toob-Loader`
+4. Creates **draft** release on `Toob-Loader` (manual approval gate)
 5. **Manual step:** Publish the draft release on GitHub
 6. Publishing triggers `compiler-promote.yml` (GitHub Actions):
-   - Retags `vX.Y.Z-rc` → `vX.Y.Z` + `latest` on Docker Hub
+   - Sends a signed webhook to the CI server
+7. CI server runs `release-compiler.yml` via `act`:
+   - Builds Docker image with pinned CLI binary
+   - Pushes to Docker Hub as `vX.Y.Z` + `latest`
    - Updates `compiler_version` in manifest, commits `[skip ci]`
    - Triggers `version-index.yml` in Registry
-   - Removes `-rc` tag from Docker Hub
+
 
 ### Manual Release
 
@@ -116,8 +115,7 @@ git push origin compiler/vX.Y.Z
 
 > **Important:** The CLI version in the manifest must point to a **published** GitHub Release. Draft releases don't have downloadable binaries.
 
-> **Prerequisite:** `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` must be configured as GitHub repo secrets for the promotion workflow.
-
+> **Prerequisite:** `WEBHOOK_SECRET` must be configured as a GitHub repo secret (same value as in `docker-compose.yml`) for the promotion webhook dispatch.
 
 ---
 
@@ -164,16 +162,17 @@ vendor/esp (PATCH) + arch/riscv32 (MINOR)
 
 ### Webhook Configuration (GitHub → CI Server)
 
-| Setting | Value |
-|---------|-------|
-| Payload URL | `https://ci.the-toob.com/hooks/release` |
-| Content type | `application/json` |
-| Secret | Same as `WEBHOOK_SECRET` in `docker-compose.yml` |
-| Events | Pushes |
+| Setting      | Value                                            |
+| ------------ | ------------------------------------------------ |
+| Payload URL  | `https://ci.the-toob.com/hooks/release`          |
+| Content type | `application/json`                               |
+| Secret       | Same as `WEBHOOK_SECRET` in `docker-compose.yml` |
+| Events       | Pushes                                           |
 
 ### Known Limitation
 
 Tags pushed by GitHub Actions workflows (e.g. by the Enforcer) do **not** trigger GitHub webhooks. Compiler and Core releases therefore require either:
+
 - A manual webhook simulation from the CI server
 - A `repository_dispatch` from the Enforcer to the CI server
 
@@ -182,6 +181,7 @@ Tags pushed by GitHub Actions workflows (e.g. by the Enforcer) do **not** trigge
 ## 6. Version Index
 
 `version_index.json` is the single aggregated view of all ecosystem versions. It is regenerated by `version-index.yml` after every release and pulls data from:
+
 - GitHub API (CLI releases, Core releases, Registry tags)
 - Docker Hub API (Compiler image tags)
 - Local `registry.json` (hardware manifest versions)
