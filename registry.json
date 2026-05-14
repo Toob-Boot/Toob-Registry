@@ -1,6 +1,6 @@
 {
     "format_version": 1,
-    "registry_version": "v1.0.9",
+    "registry_version": "v1.0.10",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
@@ -16,7 +16,8 @@
     "toolchains": {
         "riscv32-esp-elf": {
             "path": "toolchains/riscv32-esp-elf",
-            "version": "13.2.0_20230928",
+            "version": "1.0.0",
+            "upstream_version": "13.2.0_20230928",
             "urls": {
                 "darwin_amd64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-apple-darwin.tar.xz",
                 "darwin_arm64": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-apple-darwin.tar.xz",

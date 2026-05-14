@@ -27,10 +27,11 @@ type ChipManifest struct {
 }
 
 type ToolchainEntry struct {
-	Path    string            `json:"path"`
-	Version string            `json:"version"`
-	Urls    map[string]string `json:"urls"`
-	Sha256  map[string]string `json:"sha256"`
+	Path            string            `json:"path"`
+	Version         string            `json:"version"`
+	UpstreamVersion string            `json:"upstream_version"`
+	Urls            map[string]string `json:"urls"`
+	Sha256          map[string]string `json:"sha256"`
 }
 
 type VendorEntry struct {
