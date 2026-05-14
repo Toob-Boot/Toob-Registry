@@ -343,12 +343,14 @@ func main() {
 
 	for _, chipKey := range chipKeys {
 		chip := registry.Chips[chipKey]
+		log.Printf("[MatrixGen] Processing chip: %s (version %s)", chipKey, chip.Version)
 		tcName := chip.CompilerPrefix
 		if len(tcName) > 0 && tcName[len(tcName)-1] == '-' {
 			tcName = tcName[:len(tcName)-1]
 		}
 		
 		if _, exists := registry.Toolchains[tcName]; !exists {
+			log.Printf("[MatrixGen] Skip %s: Toolchain %s not found in registry", chipKey, tcName)
 			continue
 		}
 
@@ -367,6 +369,7 @@ func main() {
 			h.Write(raw)
 		}
 		hardwareHash := hex.EncodeToString(h.Sum(nil))
+		log.Printf("[MatrixGen] Hardware Hash for %s: %s", chipKey, hardwareHash)
 
 		// If called with specific CHIP, just output its hash and exit
 		if targetChip == chipKey {
@@ -379,16 +382,20 @@ func main() {
 		var verifiedMap map[string]VerifiedCombination
 		
 		if chipExists {
+			log.Printf("[MatrixGen] Chip %s exists in matrix", chipKey)
 			if versionEntry, versionExists := matrixEntry.Versions[chip.Version]; versionExists && versionEntry.EnvironmentHash == hardwareHash {
+				log.Printf("[MatrixGen] Version and Hash match for %s", chipKey)
 				if versionEntry.VerifiedCombinations != nil {
 					verifiedMap = versionEntry.VerifiedCombinations
 				} else {
 					verifiedMap = make(map[string]VerifiedCombination)
 				}
 			} else {
+				log.Printf("[MatrixGen] Version/Hash mismatch for %s (VerExists: %v)", chipKey, versionExists)
 				verifiedMap = make(map[string]VerifiedCombination)
 			}
 		} else {
+			log.Printf("[MatrixGen] Chip %s NOT in matrix", chipKey)
 			verifiedMap = make(map[string]VerifiedCombination)
 		}
 
@@ -396,7 +403,6 @@ func main() {
 		for _, cli := range cliVersions {
 			for _, core := range coreVersions {
 				for _, compiler := range compilerVersions {
-					// Full tuple key matching ledger format
 					tupleKey := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", chipKey, chip.Version, cli, core, compiler)
 					
 					// SemVer Filtering for Core SDK
@@ -405,6 +411,7 @@ func main() {
 						vMin := "v" + normalizeVersion(chip.MinCoreSDK)
 						if semver.IsValid(vCore) && semver.IsValid(vMin) {
 							if semver.Compare(vCore, vMin) < 0 {
+								log.Printf("[MatrixGen] Skip %s: Core %s < Min %s", tupleKey, core, chip.MinCoreSDK)
 								continue
 							}
 						}
@@ -416,6 +423,7 @@ func main() {
 						vMinC := "v" + normalizeVersion(chip.MinCompiler)
 						if semver.IsValid(vComp) && semver.IsValid(vMinC) {
 							if semver.Compare(vComp, vMinC) < 0 {
+								log.Printf("[MatrixGen] Skip %s: Compiler %s < Min %s", tupleKey, compiler, chip.MinCompiler)
 								continue
 							}
 						}
@@ -428,9 +436,11 @@ func main() {
 					// Check Internal State using job ID to match ledger keys
 					jobID := GenerateComboID("MT", chipKey, chip.Version, cli, core, compiler)
 					if entry, exists := internalState.Combinations[jobID]; exists {
+						log.Printf("[MatrixGen] InternalState exists for %s: %s", jobID, entry.Status)
 						if entry.Status == "FATAL_INFRA_ERROR" {
 							if t, err := time.Parse(time.RFC3339, entry.LastTested); err == nil {
 								if time.Since(t) < 30*24*time.Hour {
+									log.Printf("[MatrixGen] Skip %s: FATAL_INFRA_ERROR too recent", tupleKey)
 									continue
 								}
 							} else {
@@ -441,16 +451,19 @@ func main() {
 						if t, err := time.Parse(time.RFC3339, entry.LastTested); err == nil {
 							if entry.Status == "COMPILER_ERROR" {
 								if time.Since(t) < 30*24*time.Hour {
+									log.Printf("[MatrixGen] Skip %s: COMPILER_ERROR too recent", tupleKey)
 									continue
 								}
 							} else if entry.Status == "INFRA_ERROR" {
 								if time.Since(t) < 2*time.Hour {
+									log.Printf("[MatrixGen] Skip %s: INFRA_ERROR too recent (%v ago)", tupleKey, time.Since(t))
 									continue
 								}
 							}
 						}
 					}
 
+					log.Printf("[MatrixGen] QUEUEING: %s", tupleKey)
 					testQueue = append(testQueue, Target{
 						Chip:        chipKey,
 						ChipVersion: chip.Version,
