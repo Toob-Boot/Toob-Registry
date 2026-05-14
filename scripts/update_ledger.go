@@ -21,9 +21,12 @@ func GenerateComboID(prefix, chip, chipVersion, tcVer, cli, core, compiler strin
 }
 
 type Dependencies struct {
-	Toolchain string `json:"toolchain"`
-	Vendor    string `json:"vendor"`
-	Arch      string `json:"arch"`
+	Toolchain        string `json:"toolchain"`
+	ToolchainVersion string `json:"toolchain_version"`
+	Vendor           string `json:"vendor"`
+	VendorVersion    string `json:"vendor_version"`
+	Arch             string `json:"arch"`
+	ArchVersion      string `json:"arch_version"`
 }
 
 type VerifiedCombination struct {
@@ -44,14 +47,14 @@ type MatrixChip struct {
 type Matrix map[string]MatrixChip
 
 type Result struct {
-	Chip            string `json:"chip"`
-	ChipVersion     string `json:"chip_version"`
+	Chip             string `json:"chip"`
+	ChipVersion      string `json:"chip_version"`
 	ToolchainVersion string `json:"toolchain_version"`
-	CliVersion      string `json:"cli_version"`
-	CoreVersion     string `json:"core_version"`
-	CompilerVersion string `json:"compiler_version"`
-	Status          string `json:"status"`
-	StateHash       string `json:"state_hash"`
+	CliVersion       string `json:"cli_version"`
+	CoreVersion      string `json:"core_version"`
+	CompilerVersion  string `json:"compiler_version"`
+	Status           string `json:"status"`
+	StateHash        string `json:"state_hash"`
 }
 
 func initDB() *sql.DB {
@@ -113,8 +116,8 @@ func importLegacyJSON(db *sql.DB) {
 
 	var matrix map[string]struct {
 		Versions map[string]struct {
-			EnvironmentHash string `json:"environment_hash"`
-			Dependencies    Dependencies `json:"dependencies"`
+			EnvironmentHash      string       `json:"environment_hash"`
+			Dependencies         Dependencies `json:"dependencies"`
 			VerifiedCombinations map[string]struct {
 				Status     string `json:"status"`
 				LastTested string `json:"last_tested"`
@@ -137,29 +140,35 @@ func importLegacyJSON(db *sql.DB) {
 				parts := strings.Split(tupleKey, "::")
 				var cliVer, coreVer, compVer string
 				for _, p := range parts {
-					if strings.HasPrefix(p, "cli=") { cliVer = strings.TrimPrefix(p, "cli=") }
-					if strings.HasPrefix(p, "core=") { coreVer = strings.TrimPrefix(p, "core=") }
-					if strings.HasPrefix(p, "compiler=") { compVer = strings.TrimPrefix(p, "compiler=") }
+					if strings.HasPrefix(p, "cli=") {
+						cliVer = strings.TrimPrefix(p, "cli=")
+					}
+					if strings.HasPrefix(p, "core=") {
+						coreVer = strings.TrimPrefix(p, "core=")
+					}
+					if strings.HasPrefix(p, "compiler=") {
+						compVer = strings.TrimPrefix(p, "compiler=")
+					}
 				}
 				stmt.Exec(tupleKey, chip, ver, verData.Dependencies.ToolchainVersion, cliVer, coreVer, compVer, verData.EnvironmentHash, string(depsJSON), comb.Status, comb.LastTested)
 			}
 		}
 	}
 	tx.Commit()
-	
+
 	stateData, err := os.ReadFile("internal_state.json")
 	if err == nil && len(stateData) > 0 {
 		var state struct {
 			Combinations map[string]struct {
-				ID string `json:"id"`
-				Chip string `json:"chip"`
+				ID               string `json:"id"`
+				Chip             string `json:"chip"`
 				ToolchainVersion string `json:"toolchain_version"`
-				CliVersion string `json:"cli_version"`
-				CoreVersion string `json:"core_version"`
-				CompilerVersion string `json:"compiler_version"`
-				Status string `json:"status"`
-				LastTested string `json:"last_tested"`
-				RetryCount int `json:"retry_count"`
+				CliVersion       string `json:"cli_version"`
+				CoreVersion      string `json:"core_version"`
+				CompilerVersion  string `json:"compiler_version"`
+				Status           string `json:"status"`
+				LastTested       string `json:"last_tested"`
+				RetryCount       int    `json:"retry_count"`
 			} `json:"combinations"`
 		}
 		if err := json.Unmarshal(stateData, &state); err == nil {
@@ -306,14 +315,23 @@ func main() {
 				tcName = tcName[:len(tcName)-1]
 			}
 			tcVer, vVer, aVer := "unknown", "unknown", "unknown"
-			if tc, ok := reg.Toolchains[tcName]; ok { tcVer = tc.Version }
-			if v, ok := reg.Vendors[chipMeta.Vendor]; ok { vVer = v.Version }
-			if a, ok := reg.Archs[chipMeta.Arch]; ok { aVer = a.Version }
+			if tc, ok := reg.Toolchains[tcName]; ok {
+				tcVer = tc.Version
+			}
+			if v, ok := reg.Vendors[chipMeta.Vendor]; ok {
+				vVer = v.Version
+			}
+			if a, ok := reg.Archs[chipMeta.Arch]; ok {
+				aVer = a.Version
+			}
 
 			chipMetaDeps = Dependencies{
-				Toolchain: fmt.Sprintf("%s@%s", tcName, tcVer),
-				Vendor:    fmt.Sprintf("%s@%s", chipMeta.Vendor, vVer),
-				Arch:      fmt.Sprintf("%s@%s", chipMeta.Arch, aVer),
+				Toolchain:        tcName,
+				ToolchainVersion: tcVer,
+				Vendor:           chipMeta.Vendor,
+				VendorVersion:    vVer,
+				Arch:             chipMeta.Arch,
+				ArchVersion:      aVer,
 			}
 		}
 		if chipManifestVer == "" {
@@ -377,7 +395,6 @@ func main() {
 	}
 
 	tx.Commit()
-
 
 	if updated {
 		exportMatrix(db)
@@ -471,7 +488,7 @@ func exportInternalState(db *sql.DB) {
 		LastTested      string `json:"last_tested"`
 		RetryCount      int    `json:"retry_count"`
 	}
-	
+
 	type InternalStateJSON struct {
 		Combinations map[string]InternalStateEntryJSON `json:"combinations"`
 	}
