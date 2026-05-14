@@ -2,39 +2,39 @@
   "esp32c6": {
     "versions": {
       "1.1.0": {
-        "environment_hash": "c3099991b95315233b8ea5dadc2cab170d139b30e1ef1164b90ed80cfa32930c",
+        "environment_hash": "16dce5bf79a9f261919f590491cb30e4d0916d97c39fb8472ab1a78bd95a3bb0",
         "dependencies": {
-          "toolchain": "riscv32-esp-elf@13.2.0_20230928",
-          "toolchain_version": "",
-          "vendor": "esp@1.0.1",
-          "vendor_version": "",
-          "arch": "riscv32@1.0.0",
-          "arch_version": ""
+          "toolchain": "riscv32-esp-elf",
+          "toolchain_version": "1.0.0",
+          "vendor": "esp",
+          "vendor_version": "1.0.1",
+          "arch": "riscv32",
+          "arch_version": "1.0.0"
         },
         "verified_combinations": {
           "chip=esp32c6@1.1.0::cli=cli/v0.0.13::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T21:20:03Z"
+            "last_tested": "2026-05-14T23:53:52Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.0.15::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T21:26:48Z"
+            "last_tested": "2026-05-14T23:53:52Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.2.0::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T21:26:48Z"
+            "last_tested": "2026-05-14T23:53:52Z"
           },
           "chip=esp32c6@1.1.0::cli=cli/v0.2.1::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T21:26:48Z"
+            "last_tested": "2026-05-14T23:53:52Z"
           },
-          "chip=esp32c6@1.1.0::cli=cli/v0.3.1::core=0.0.1::compiler=v0.1.2": {
+          "chip=esp32c6@1.1.0::cli=cli/v0.2.2::core=0.0.1::compiler=v0.1.2": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T19:41:48Z"
+            "last_tested": "2026-05-14T23:53:52Z"
           },
-          "chip=esp32c6@1.1.0::cli=cli/v0.3.2::core=0.0.1::compiler=v0.1.2": {
+          "chip=esp32c6@1.1.0::cli=cli/v0.3.4::core=0.0.1::compiler=v0.1.2": {
             "status": "VERIFIED",
-            "last_tested": "2026-05-14T20:29:45Z"
+            "last_tested": "2026-05-14T23:53:52Z"
           }
         }
       }
