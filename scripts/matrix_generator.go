@@ -189,6 +189,7 @@ func getActiveCliVersions() []string {
 			versions = append(versions, tag)
 		}
 	}
+	log.Printf("[MatrixGen] Found %d CLI versions", len(versions))
 	return versions
 }
 
@@ -215,6 +216,7 @@ func getActiveCoreVersions() []string {
 			}
 		}
 	}
+	log.Printf("[MatrixGen] Found %d Core versions", len(versions))
 	return versions
 }
 
@@ -261,6 +263,7 @@ func getActiveCompilerVersions() []string {
 		log.Println("[MatrixGen] Warning: No pinned compiler versions found on DockerHub.")
 		return nil
 	}
+	log.Printf("[MatrixGen] Found %d Compiler versions", len(versions))
 	return versions
 }
 
