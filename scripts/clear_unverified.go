@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	db, err := sql.Open("sqlite", "ledger.db?_pragma=busy_timeout(10000)")
+	db, err := sql.Open("sqlite", "ledger.db?_pragma=busy_timeout(10000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
 	if err != nil {
 		log.Fatalf("FATAL: Failed to open SQLite ledger.db: %v", err)
 	}

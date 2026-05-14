@@ -59,15 +59,12 @@ func initDB() *sql.DB {
 		needsMigration = true
 	}
 
-	db, err := sql.Open("sqlite", "ledger.db?_pragma=busy_timeout(10000)")
+	db, err := sql.Open("sqlite", "ledger.db?_pragma=busy_timeout(10000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
 	if err != nil {
 		log.Fatalf("FATAL: Failed to open SQLite ledger.db: %v", err)
 	}
 
 	_, err = db.Exec(`
-		PRAGMA journal_mode=WAL;
-		PRAGMA synchronous=NORMAL;
-
 		CREATE TABLE IF NOT EXISTS verified_combinations (
 			tuple_key TEXT PRIMARY KEY,
 			chip TEXT,
@@ -368,11 +365,6 @@ func main() {
 
 	tx.Commit()
 
-	for _, file := range matches {
-		if err := os.Remove(file); err != nil {
-			log.Printf("Warning: Failed to delete processed file %s: %v", file, err)
-		}
-	}
 
 	if updated {
 		exportMatrix(db)
