@@ -14,8 +14,8 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 )
 
-func GenerateComboID(prefix, chip, chipVersion, cli, core, compiler string) string {
-	str := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", chip, chipVersion, cli, core, compiler)
+func GenerateComboID(prefix, chip, chipVersion, tcVer, cli, core, compiler string) string {
+	str := fmt.Sprintf("chip=%s@%s::tc=%s::cli=%s::core=%s::compiler=%s", chip, chipVersion, tcVer, cli, core, compiler)
 	h := crc32.ChecksumIEEE([]byte(str))
 	return fmt.Sprintf("%s-%08X", prefix, h)
 }
@@ -46,6 +46,7 @@ type Matrix map[string]MatrixChip
 type Result struct {
 	Chip            string `json:"chip"`
 	ChipVersion     string `json:"chip_version"`
+	ToolchainVersion string `json:"toolchain_version"`
 	CliVersion      string `json:"cli_version"`
 	CoreVersion     string `json:"core_version"`
 	CompilerVersion string `json:"compiler_version"`
@@ -69,6 +70,7 @@ func initDB() *sql.DB {
 			tuple_key TEXT PRIMARY KEY,
 			chip TEXT,
 			chip_version TEXT,
+			toolchain_version TEXT,
 			cli_version TEXT,
 			core_version TEXT,
 			compiler_version TEXT,
@@ -82,6 +84,7 @@ func initDB() *sql.DB {
 			job_id TEXT PRIMARY KEY,
 			chip TEXT,
 			chip_version TEXT,
+			toolchain_version TEXT,
 			cli_version TEXT,
 			core_version TEXT,
 			compiler_version TEXT,
@@ -125,7 +128,7 @@ func importLegacyJSON(db *sql.DB) {
 	}
 
 	tx, _ := db.Begin()
-	stmt, _ := tx.Prepare(`INSERT INTO verified_combinations (tuple_key, chip, chip_version, cli_version, core_version, compiler_version, environment_hash, dependencies_json, status, last_tested) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	stmt, _ := tx.Prepare(`INSERT INTO verified_combinations (tuple_key, chip, chip_version, toolchain_version, cli_version, core_version, compiler_version, environment_hash, dependencies_json, status, last_tested) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 
 	for chip, chipData := range matrix {
 		for ver, verData := range chipData.Versions {
@@ -138,7 +141,7 @@ func importLegacyJSON(db *sql.DB) {
 					if strings.HasPrefix(p, "core=") { coreVer = strings.TrimPrefix(p, "core=") }
 					if strings.HasPrefix(p, "compiler=") { compVer = strings.TrimPrefix(p, "compiler=") }
 				}
-				stmt.Exec(tupleKey, chip, ver, cliVer, coreVer, compVer, verData.EnvironmentHash, string(depsJSON), comb.Status, comb.LastTested)
+				stmt.Exec(tupleKey, chip, ver, verData.Dependencies.ToolchainVersion, cliVer, coreVer, compVer, verData.EnvironmentHash, string(depsJSON), comb.Status, comb.LastTested)
 			}
 		}
 	}
@@ -150,6 +153,7 @@ func importLegacyJSON(db *sql.DB) {
 			Combinations map[string]struct {
 				ID string `json:"id"`
 				Chip string `json:"chip"`
+				ToolchainVersion string `json:"toolchain_version"`
 				CliVersion string `json:"cli_version"`
 				CoreVersion string `json:"core_version"`
 				CompilerVersion string `json:"compiler_version"`
@@ -160,9 +164,9 @@ func importLegacyJSON(db *sql.DB) {
 		}
 		if err := json.Unmarshal(stateData, &state); err == nil {
 			tx2, _ := db.Begin()
-			stmt2, _ := tx2.Prepare(`INSERT INTO internal_state (job_id, chip, cli_version, core_version, compiler_version, status, last_tested, retry_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+			stmt2, _ := tx2.Prepare(`INSERT INTO internal_state (job_id, chip, chip_version, toolchain_version, cli_version, core_version, compiler_version, status, last_tested, retry_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 			for jobID, comb := range state.Combinations {
-				stmt2.Exec(jobID, comb.Chip, comb.CliVersion, comb.CoreVersion, comb.CompilerVersion, comb.Status, comb.LastTested, comb.RetryCount)
+				stmt2.Exec(jobID, comb.Chip, "", comb.ToolchainVersion, comb.CliVersion, comb.CoreVersion, comb.CompilerVersion, comb.Status, comb.LastTested, comb.RetryCount)
 			}
 			tx2.Commit()
 		}
@@ -236,9 +240,9 @@ func main() {
 
 	stmtUpsertComb, _ := tx.Prepare(`
 		INSERT INTO verified_combinations (
-			tuple_key, chip, chip_version, cli_version, core_version, compiler_version, 
+			tuple_key, chip, chip_version, toolchain_version, cli_version, core_version, compiler_version, 
 			environment_hash, dependencies_json, status, last_tested
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(tuple_key) DO UPDATE SET 
 			status=excluded.status, 
 			last_tested=excluded.last_tested, 
@@ -318,12 +322,21 @@ func main() {
 		depsJSON, _ := json.Marshal(chipMetaDeps)
 
 		tupleKey := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", result.Chip, chipManifestVer, result.CliVersion, result.CoreVersion, result.CompilerVersion)
-		jobID := GenerateComboID("MT", result.Chip, chipManifestVer, result.CliVersion, result.CoreVersion, result.CompilerVersion)
+		jobID := GenerateComboID("MT", result.Chip, chipManifestVer, result.ToolchainVersion, result.CliVersion, result.CoreVersion, result.CompilerVersion)
 
 		if result.Status == "VERIFIED" {
 			_, err := stmtUpsertComb.Exec(
-				tupleKey, result.Chip, chipManifestVer, result.CliVersion, result.CoreVersion, result.CompilerVersion,
-				result.StateHash, string(depsJSON), result.Status, timestamp,
+				tupleKey,
+				result.Chip,
+				chipManifestVer,
+				result.ToolchainVersion,
+				result.CliVersion,
+				result.CoreVersion,
+				result.CompilerVersion,
+				result.StateHash,
+				string(depsJSON),
+				"VERIFIED",
+				time.Now().Format(time.RFC3339),
 			)
 			if err == nil {
 				updated = true

@@ -63,9 +63,12 @@ type Registry struct {
 }
 
 type Dependencies struct {
-	Toolchain string `json:"toolchain"`
-	Vendor    string `json:"vendor"`
-	Arch      string `json:"arch"`
+	Toolchain        string `json:"toolchain"`
+	ToolchainVersion string `json:"toolchain_version"`
+	Vendor           string `json:"vendor"`
+	VendorVersion    string `json:"vendor_version"`
+	Arch             string `json:"arch"`
+	ArchVersion      string `json:"arch_version"`
 }
 
 type VerifiedCombination struct {
@@ -96,15 +99,16 @@ type InternalState struct {
 }
 
 type Target struct {
-	Chip        string `json:"chip"`
-	ChipVersion string `json:"chip_version"`
-	Cli         string `json:"cli"`
-	Core        string `json:"core"`
-	Compiler    string `json:"compiler"`
+	Chip             string `json:"chip"`
+	ChipVersion      string `json:"chip_version"`
+	ToolchainVersion string `json:"toolchain_version"`
+	Cli              string `json:"cli"`
+	Core             string `json:"core"`
+	Compiler         string `json:"compiler"`
 }
 
-func GenerateComboID(prefix, chip, chipVersion, cli, core, compiler string) string {
-	str := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", chip, chipVersion, cli, core, compiler)
+func GenerateComboID(prefix, chip, chipVersion, tcVer, cli, core, compiler string) string {
+	str := fmt.Sprintf("chip=%s@%s::tc=%s::cli=%s::core=%s::compiler=%s", chip, chipVersion, tcVer, cli, core, compiler)
 	h := crc32.ChecksumIEEE([]byte(str))
 	return fmt.Sprintf("%s-%08X", prefix, h)
 }
@@ -427,7 +431,7 @@ func main() {
 					}
 
 					// Check Internal State using job ID to match ledger keys
-					jobID := GenerateComboID("MT", chipKey, chip.Version, cli, core, compiler)
+					jobID := GenerateComboID("MT", chipKey, chip.Version, registry.Toolchains[tcName].Version, cli, core, compiler)
 					if entry, exists := internalState.Combinations[jobID]; exists {
 						if entry.Status == "FATAL_INFRA_ERROR" {
 							if t, err := time.Parse(time.RFC3339, entry.LastTested); err == nil {
@@ -456,11 +460,12 @@ func main() {
 
 					log.Printf("[MatrixGen] QUEUEING: %s", tupleKey)
 					testQueue = append(testQueue, Target{
-						Chip:        chipKey,
-						ChipVersion: chip.Version,
-						Cli:         cli,
-						Core:        core,
-						Compiler:    compiler,
+						Chip:             chipKey,
+						ChipVersion:      chip.Version,
+						ToolchainVersion: registry.Toolchains[tcName].Version,
+						Cli:              cli,
+						Core:             core,
+						Compiler:         compiler,
 					})
 
 					if len(testQueue) >= 256 {
