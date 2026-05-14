@@ -171,10 +171,13 @@ vendor/esp (PATCH) + arch/riscv32 (MINOR)
 
 ### Known Limitation
 
-Tags pushed by GitHub Actions workflows (e.g. by the Enforcer) do **not** trigger GitHub webhooks. Compiler and Core releases therefore require either:
+Tags pushed by GitHub Actions workflows (e.g. by the Enforcer) do **not** trigger GitHub webhooks. 
 
-- A manual webhook simulation from the CI server
-- A `repository_dispatch` from the Enforcer to the CI server
+To work around this:
+- **Compiler:** The `compiler-promote.yml` workflow explicitly sends a `curl` webhook to the CI server after the draft release is manually published.
+- **CLI / Core:** Currently require a manual webhook simulation from the CI server or a `repository_dispatch` from the Enforcer.
+
+> **Note:** The CI server gracefully ignores non-push events or events without a valid commit SHA (e.g., tag `create` or `release` events from GitHub) with a `200 OK` to prevent webhook delivery failures in the GitHub UI.
 
 ---
 
