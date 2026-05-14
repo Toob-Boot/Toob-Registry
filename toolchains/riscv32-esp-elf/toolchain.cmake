@@ -38,6 +38,13 @@ find_program(CMAKE_STRIP NAMES ${TOOLCHAIN_PREFIX}strip)
 # fertiges RISC-V Linker-Script ein komplettes .out Executable zu bauen (was fehlschlägt).
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
+# Bypass Compiler Check
+# Da wir Architektur-Flags erst durch toob_hal.cmake injizieren, schlägt CMake's Compiler Test
+# mit dem Espressif Default (ESP32-P4/rv32imafdc) oft fehl, was den Lauf abbricht.
+set(CMAKE_C_COMPILER_WORKS TRUE)
+set(CMAKE_ASM_COMPILER_WORKS TRUE)
+set(CMAKE_CXX_COMPILER_WORKS TRUE)
+
 # ------------------------------------------------------------------------------
 # 3. Architektur-unabhängige Bare-Metal Compiler/Linker Flags
 # ------------------------------------------------------------------------------
