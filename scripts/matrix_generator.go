@@ -5,10 +5,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -46,14 +48,14 @@ type ArchEntry struct {
 	Description string `json:"description"`
 }
 
-type ReleasesIndex struct {
+type EcosystemIndex struct {
 	Cli      []string `json:"cli"`
 	CoreSDK  []string `json:"core_sdk"`
 	Compiler []string `json:"compiler"`
 }
 
 type Registry struct {
-	Releases   *ReleasesIndex            `json:"releases,omitempty"`
+	Ecosystem  *EcosystemIndex           `json:"ecosystem,omitempty"`
 	Chips      map[string]ChipManifest   `json:"chips"`
 	Toolchains map[string]ToolchainEntry `json:"toolchains"`
 	Vendors    map[string]VendorEntry    `json:"vendors"`
@@ -94,10 +96,17 @@ type InternalState struct {
 }
 
 type Target struct {
-	Chip     string `json:"chip"`
-	Cli      string `json:"cli"`
-	Core     string `json:"core"`
-	Compiler string `json:"compiler"`
+	Chip        string `json:"chip"`
+	ChipVersion string `json:"chip_version"`
+	Cli         string `json:"cli"`
+	Core        string `json:"core"`
+	Compiler    string `json:"compiler"`
+}
+
+func GenerateComboID(prefix, chip, chipVersion, cli, core, compiler string) string {
+	str := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", chip, chipVersion, cli, core, compiler)
+	h := crc32.ChecksumIEEE([]byte(str))
+	return fmt.Sprintf("%s-%08X", prefix, h)
 }
 
 // fetchGitHubPages handles Link header pagination for GitHub API.
@@ -295,10 +304,10 @@ func main() {
 	var coreVersions []string
 	var compilerVersions []string
 
-	if registry.Releases != nil {
-		cliVersions = registry.Releases.Cli
-		coreVersions = registry.Releases.CoreSDK
-		compilerVersions = registry.Releases.Compiler
+	if registry.Ecosystem != nil {
+		cliVersions = registry.Ecosystem.Cli
+		coreVersions = registry.Ecosystem.CoreSDK
+		compilerVersions = registry.Ecosystem.Compiler
 	}
 
 	if len(cliVersions) == 0 {
@@ -311,33 +320,49 @@ func main() {
 		compilerVersions = getActiveCompilerVersions()
 	}
 	
+	// Read raw JSON blocks for canonical hashing
+	var rawReg struct {
+		Chips      map[string]json.RawMessage `json:"chips"`
+		Toolchains map[string]json.RawMessage `json:"toolchains"`
+		Vendors    map[string]json.RawMessage `json:"vendors"`
+		Archs      map[string]json.RawMessage `json:"archs"`
+	}
+	json.Unmarshal(regData, &rawReg)
+
 	testQueue := []Target{}
 
-	for chipKey, chip := range registry.Chips {
+	// Sort chip keys for deterministic round-robin iteration
+	chipKeys := make([]string, 0, len(registry.Chips))
+	for k := range registry.Chips {
+		chipKeys = append(chipKeys, k)
+	}
+	sort.Strings(chipKeys)
+
+	for _, chipKey := range chipKeys {
+		chip := registry.Chips[chipKey]
 		tcName := chip.CompilerPrefix
 		if len(tcName) > 0 && tcName[len(tcName)-1] == '-' {
 			tcName = tcName[:len(tcName)-1]
 		}
 		
-		toolchain, exists := registry.Toolchains[tcName]
-		if !exists {
+		if _, exists := registry.Toolchains[tcName]; !exists {
 			continue
 		}
 
-		// Calculate pristine Hardware Hash (WITHOUT CLI version)
-		vManifest := registry.Vendors[chip.Vendor]
-		aManifest := registry.Archs[chip.Arch]
-		
-		chipBytes, _ := json.Marshal(chip)
-		tcBytes, _ := json.Marshal(toolchain)
-		vBytes, _ := json.Marshal(vManifest)
-		aBytes, _ := json.Marshal(aManifest)
-		
+		// Calculate canonical Hardware Hash using raw JSON blocks
 		h := sha256.New()
-		h.Write(chipBytes)
-		h.Write(tcBytes)
-		h.Write(vBytes)
-		h.Write(aBytes)
+		if raw, ok := rawReg.Chips[chipKey]; ok {
+			h.Write(raw)
+		}
+		if raw, ok := rawReg.Toolchains[tcName]; ok {
+			h.Write(raw)
+		}
+		if raw, ok := rawReg.Vendors[chip.Vendor]; ok {
+			h.Write(raw)
+		}
+		if raw, ok := rawReg.Archs[chip.Arch]; ok {
+			h.Write(raw)
+		}
 		hardwareHash := hex.EncodeToString(h.Sum(nil))
 
 		// If called with specific CHIP, just output its hash and exit
@@ -368,8 +393,8 @@ func main() {
 		for _, cli := range cliVersions {
 			for _, core := range coreVersions {
 				for _, compiler := range compilerVersions {
-					// Build tuple key
-					tupleKey := fmt.Sprintf("cli=%s::core=%s::compiler=%s", cli, core, compiler)
+					// Full tuple key matching ledger format
+					tupleKey := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", chipKey, chip.Version, cli, core, compiler)
 					
 					// SemVer Filtering for Core SDK
 					if chip.MinCoreSDK != "" && chip.MinCoreSDK != "main" && core != "main" {
@@ -397,10 +422,10 @@ func main() {
 						continue
 					}
 					
-					// Check Internal State for errors and retries
-					if entry, exists := internalState.Combinations[tupleKey]; exists {
+					// Check Internal State using job ID to match ledger keys
+					jobID := GenerateComboID("MT", chipKey, chip.Version, cli, core, compiler)
+					if entry, exists := internalState.Combinations[jobID]; exists {
 						if entry.Status == "FATAL_INFRA_ERROR" {
-							// Gap #23: Auto-reset after 30 days
 							if t, err := time.Parse(time.RFC3339, entry.LastTested); err == nil {
 								if time.Since(t) < 30*24*time.Hour {
 									continue
@@ -424,10 +449,11 @@ func main() {
 					}
 
 					testQueue = append(testQueue, Target{
-						Chip:     chipKey,
-						Cli:      cli,
-						Core:     core,
-						Compiler: compiler,
+						Chip:        chipKey,
+						ChipVersion: chip.Version,
+						Cli:         cli,
+						Core:        core,
+						Compiler:    compiler,
 					})
 
 					if len(testQueue) >= 256 {

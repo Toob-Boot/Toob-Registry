@@ -14,10 +14,10 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 )
 
-func GenerateComboID(prefix, chip, cli, core, compiler string) string {
-	str := fmt.Sprintf("chip=%s::cli=%s::core=%s::compiler=%s", chip, cli, core, compiler)
+func GenerateComboID(prefix, chip, chipVersion, cli, core, compiler string) string {
+	str := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", chip, chipVersion, cli, core, compiler)
 	h := crc32.ChecksumIEEE([]byte(str))
-	return fmt.Sprintf("%s-%06X", prefix, h)
+	return fmt.Sprintf("%s-%08X", prefix, h)
 }
 
 type Dependencies struct {
@@ -45,6 +45,7 @@ type Matrix map[string]MatrixChip
 
 type Result struct {
 	Chip            string `json:"chip"`
+	ChipVersion     string `json:"chip_version"`
 	CliVersion      string `json:"cli_version"`
 	CoreVersion     string `json:"core_version"`
 	CompilerVersion string `json:"compiler_version"`
@@ -83,6 +84,7 @@ func initDB() *sql.DB {
 		CREATE TABLE IF NOT EXISTS internal_state (
 			job_id TEXT PRIMARY KEY,
 			chip TEXT,
+			chip_version TEXT,
 			cli_version TEXT,
 			core_version TEXT,
 			compiler_version TEXT,
@@ -179,12 +181,16 @@ func main() {
 	updated := false
 	stateUpdated := false
 
-	// Migration: Purge all "main" entries efficiently
-	res, _ := db.Exec("DELETE FROM verified_combinations WHERE tuple_key LIKE '%core=main%' OR tuple_key LIKE '%cli=main%'")
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected > 0 {
-		fmt.Printf("Purged %d stale 'main' entries from DB.\n", rowsAffected)
-		updated = true
+	// One-time migration: Purge all "main" entries
+	var purgeCount int
+	db.QueryRow(`SELECT COUNT(*) FROM verified_combinations WHERE tuple_key LIKE '%core=main%' OR tuple_key LIKE '%cli=main%'`).Scan(&purgeCount)
+	if purgeCount > 0 {
+		res, _ := db.Exec("DELETE FROM verified_combinations WHERE tuple_key LIKE '%core=main%' OR tuple_key LIKE '%cli=main%'")
+		rowsAffected, _ := res.RowsAffected()
+		if rowsAffected > 0 {
+			fmt.Printf("Purged %d stale 'main' entries from DB.\n", rowsAffected)
+			updated = true
+		}
 	}
 
 	// Read all result_*.json.processing files
@@ -246,8 +252,8 @@ func main() {
 	stmtDeleteState, _ := tx.Prepare(`DELETE FROM internal_state WHERE job_id = ?`)
 	stmtUpsertState, _ := tx.Prepare(`
 		INSERT INTO internal_state (
-			job_id, chip, cli_version, core_version, compiler_version, status, last_tested, retry_count
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			job_id, chip, chip_version, cli_version, core_version, compiler_version, status, last_tested, retry_count
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(job_id) DO UPDATE SET 
 			status=excluded.status, 
 			last_tested=excluded.last_tested, 
@@ -271,6 +277,13 @@ func main() {
 		if result.Chip == "" || result.StateHash == "" || result.CliVersion == "" {
 			continue
 		}
+
+		// Validate status field
+		validStatuses := map[string]bool{"VERIFIED": true, "INFRA_ERROR": true, "COMPILER_ERROR": true}
+		if !validStatuses[result.Status] {
+			log.Printf("Warning: Skipping %s with invalid status '%s'", file, result.Status)
+			continue
+		}
 		if result.CoreVersion == "" {
 			result.CoreVersion = "main"
 		}
@@ -278,11 +291,15 @@ func main() {
 			result.CompilerVersion = "latest"
 		}
 
-		chipManifestVer := "1.0.0"
+		// Use chip_version from result file (provided by the pipeline).
+		// Fall back to registry lookup only for legacy results missing the field.
+		chipManifestVer := result.ChipVersion
 		var chipMetaDeps Dependencies
 
 		if chipMeta, ok := reg.Chips[result.Chip]; ok {
-			chipManifestVer = chipMeta.Version
+			if chipManifestVer == "" {
+				chipManifestVer = chipMeta.Version
+			}
 			tcName := chipMeta.CompilerPrefix
 			if len(tcName) > 0 && tcName[len(tcName)-1] == '-' {
 				tcName = tcName[:len(tcName)-1]
@@ -298,10 +315,13 @@ func main() {
 				Arch:      fmt.Sprintf("%s@%s", chipMeta.Arch, aVer),
 			}
 		}
+		if chipManifestVer == "" {
+			chipManifestVer = "1.0.0"
+		}
 		depsJSON, _ := json.Marshal(chipMetaDeps)
 
-		tupleKey := fmt.Sprintf("chip=%s::cli=%s::core=%s::compiler=%s", result.Chip, result.CliVersion, result.CoreVersion, result.CompilerVersion)
-		jobID := GenerateComboID("MT", result.Chip, result.CliVersion, result.CoreVersion, result.CompilerVersion)
+		tupleKey := fmt.Sprintf("chip=%s@%s::cli=%s::core=%s::compiler=%s", result.Chip, chipManifestVer, result.CliVersion, result.CoreVersion, result.CompilerVersion)
+		jobID := GenerateComboID("MT", result.Chip, chipManifestVer, result.CliVersion, result.CoreVersion, result.CompilerVersion)
 
 		if result.Status == "VERIFIED" {
 			_, err := stmtUpsertComb.Exec(
@@ -337,7 +357,7 @@ func main() {
 			}
 
 			_, err = stmtUpsertState.Exec(
-				jobID, result.Chip, result.CliVersion, result.CoreVersion, result.CompilerVersion,
+				jobID, result.Chip, chipManifestVer, result.CliVersion, result.CoreVersion, result.CompilerVersion,
 				result.Status, timestamp, retryCount,
 			)
 			if err == nil {
@@ -366,7 +386,7 @@ func main() {
 }
 
 func exportMatrix(db *sql.DB) {
-	rows, err := db.Query(`SELECT tuple_key, chip, chip_version, cli_version, core_version, compiler_version, environment_hash, dependencies_json, status, last_tested FROM verified_combinations`)
+	rows, err := db.Query(`SELECT tuple_key, chip, chip_version, environment_hash, dependencies_json, status, last_tested FROM verified_combinations ORDER BY chip, chip_version, environment_hash`)
 	if err != nil {
 		log.Fatalf("FATAL: Failed to query DB for export: %v", err)
 	}
@@ -374,36 +394,57 @@ func exportMatrix(db *sql.DB) {
 
 	matrix := make(Matrix)
 
+	// Collect rows grouped by (chip, chip_version)
+	// Track the latest environment_hash per version so stale hashes don't overwrite current entries
+	type versionRows struct {
+		EnvHash  string
+		DepsJSON string
+		Combs    map[string]VerifiedCombination
+	}
+	versionMap := make(map[string]*versionRows) // key: "chip::chipVer"
+
 	for rows.Next() {
-		var tupleKey, chip, chipVer, cliVer, coreVer, compVer, envHash, depsJSON, status, lastTested string
-		if err := rows.Scan(&tupleKey, &chip, &chipVer, &cliVer, &coreVer, &compVer, &envHash, &depsJSON, &status, &lastTested); err != nil {
+		var tupleKey, chip, chipVer, envHash, depsJSON, status, lastTested string
+		if err := rows.Scan(&tupleKey, &chip, &chipVer, &envHash, &depsJSON, &status, &lastTested); err != nil {
 			continue
 		}
 
-		var deps Dependencies
-		json.Unmarshal([]byte(depsJSON), &deps)
+		groupKey := chip + "::" + chipVer
+		vr, exists := versionMap[groupKey]
+		if !exists {
+			vr = &versionRows{EnvHash: envHash, DepsJSON: depsJSON, Combs: make(map[string]VerifiedCombination)}
+			versionMap[groupKey] = vr
+		}
 
-		chipEntry, chipExists := matrix[chip]
-		if !chipExists {
+		// If a newer hash appears for this version, reset to only keep that hash's entries
+		if vr.EnvHash != envHash {
+			vr.EnvHash = envHash
+			vr.DepsJSON = depsJSON
+			vr.Combs = make(map[string]VerifiedCombination)
+		}
+
+		vr.Combs[tupleKey] = VerifiedCombination{Status: status, LastTested: lastTested}
+	}
+
+	// Build final matrix from grouped data
+	for groupKey, vr := range versionMap {
+		parts := strings.SplitN(groupKey, "::", 2)
+		chip, chipVer := parts[0], parts[1]
+
+		var deps Dependencies
+		json.Unmarshal([]byte(vr.DepsJSON), &deps)
+
+		chipEntry, exists := matrix[chip]
+		if !exists {
 			chipEntry = MatrixChip{Versions: make(map[string]MatrixVersion)}
 			matrix[chip] = chipEntry
 		}
 
-		versionEntry, versionExists := chipEntry.Versions[chipVer]
-		if !versionExists || versionEntry.EnvironmentHash != envHash {
-			versionEntry = MatrixVersion{
-				EnvironmentHash:      envHash,
-				Dependencies:         deps,
-				VerifiedCombinations: make(map[string]VerifiedCombination),
-			}
+		chipEntry.Versions[chipVer] = MatrixVersion{
+			EnvironmentHash:      vr.EnvHash,
+			Dependencies:         deps,
+			VerifiedCombinations: vr.Combs,
 		}
-
-		versionEntry.VerifiedCombinations[tupleKey] = VerifiedCombination{
-			Status:     status,
-			LastTested: lastTested,
-		}
-
-		chipEntry.Versions[chipVer] = versionEntry
 	}
 
 	out, _ := json.MarshalIndent(matrix, "", "  ")
@@ -417,6 +458,7 @@ func exportInternalState(db *sql.DB) {
 	type InternalStateEntryJSON struct {
 		ID              string `json:"id"`
 		Chip            string `json:"chip"`
+		ChipVersion     string `json:"chip_version"`
 		CliVersion      string `json:"cli_version"`
 		CoreVersion     string `json:"core_version"`
 		CompilerVersion string `json:"compiler_version"`
@@ -429,7 +471,7 @@ func exportInternalState(db *sql.DB) {
 		Combinations map[string]InternalStateEntryJSON `json:"combinations"`
 	}
 
-	rows, err := db.Query(`SELECT job_id, chip, cli_version, core_version, compiler_version, status, last_tested, retry_count FROM internal_state`)
+	rows, err := db.Query(`SELECT job_id, chip, COALESCE(chip_version, ''), cli_version, core_version, compiler_version, status, last_tested, retry_count FROM internal_state`)
 	if err != nil {
 		return
 	}
@@ -441,7 +483,7 @@ func exportInternalState(db *sql.DB) {
 
 	for rows.Next() {
 		var entry InternalStateEntryJSON
-		if err := rows.Scan(&entry.ID, &entry.Chip, &entry.CliVersion, &entry.CoreVersion, &entry.CompilerVersion, &entry.Status, &entry.LastTested, &entry.RetryCount); err == nil {
+		if err := rows.Scan(&entry.ID, &entry.Chip, &entry.ChipVersion, &entry.CliVersion, &entry.CoreVersion, &entry.CompilerVersion, &entry.Status, &entry.LastTested, &entry.RetryCount); err == nil {
 			state.Combinations[entry.ID] = entry
 		}
 	}

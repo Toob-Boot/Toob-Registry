@@ -117,18 +117,30 @@ func main() {
 	newIntegrations := make(map[string]IntegrationEntry)
 
 	// Read Matrix
-	type HistoryEntry struct {
-		StateHash string `json:"state_hash"`
+	type VerifiedCombination struct {
 		Status    string `json:"status"`
 	}
-	type MatrixChip struct {
-		History []HistoryEntry `json:"history"`
+	type MatrixVersionEntry struct {
+		EnvironmentHash      string                            `json:"environment_hash"`
+		VerifiedCombinations map[string]VerifiedCombination    `json:"verified_combinations"`
+	}
+	type MatrixChipEntry struct {
+		Versions map[string]MatrixVersionEntry `json:"versions"`
 	}
 	matrixData, _ := os.ReadFile("compatibility_matrix.json")
-	matrix := make(map[string]MatrixChip)
+	matrix := make(map[string]MatrixChipEntry)
 	if len(matrixData) > 0 {
 		_ = json.Unmarshal(matrixData, &matrix)
 	}
+
+	// Read raw JSON blocks for canonical environment hashing
+	var rawReg struct {
+		Chips      map[string]json.RawMessage `json:"chips"`
+		Toolchains map[string]json.RawMessage `json:"toolchains"`
+		Vendors    map[string]json.RawMessage `json:"vendors"`
+		Archs      map[string]json.RawMessage `json:"archs"`
+	}
+	json.Unmarshal(data, &rawReg)
 
 	// Walk toolchains directory
 	tcDir := "toolchains"
@@ -305,34 +317,46 @@ func main() {
 		}
 
 		// Check Matrix Verification Status
-		tc := newToolchains[tcName]
-		vManifest, vExists := newVendors[c.Vendor]
-		if !vExists {
+
+		if _, vExists := newVendors[c.Vendor]; !vExists {
 			log.Fatalf("FATAL: Chip '%s' uses vendor '%s', but no valid vendor_manifest.json was loaded for it!", chipKey, c.Vendor)
 		}
-		aManifest, aExists := newArchs[c.Arch]
-		if !aExists {
+		if _, aExists := newArchs[c.Arch]; !aExists {
 			log.Fatalf("FATAL: Chip '%s' uses arch '%s', but no valid arch_manifest.json was loaded for it!", chipKey, c.Arch)
 		}
 
-		cBytes, _ := json.Marshal(c)
-		tBytes, _ := json.Marshal(tc)
-		vBytes, _ := json.Marshal(vManifest)
-		aBytes, _ := json.Marshal(aManifest)
-
+		// Canonical environment hash using raw JSON blocks from registry.json
 		h := sha256.New()
-		h.Write(cBytes)
-		h.Write(tBytes)
-		h.Write(vBytes)
-		h.Write(aBytes)
+		if raw, ok := rawReg.Chips[chipKey]; ok {
+			h.Write(raw)
+		}
+		if raw, ok := rawReg.Toolchains[tcName]; ok {
+			h.Write(raw)
+		}
+		if raw, ok := rawReg.Vendors[c.Vendor]; ok {
+			h.Write(raw)
+		}
+		if raw, ok := rawReg.Archs[c.Arch]; ok {
+			h.Write(raw)
+		}
 		stateHash := hex.EncodeToString(h.Sum(nil))
 
 		c.Verified = false
 		if mChip, exists := matrix[chipKey]; exists {
-			for _, hEntry := range mChip.History {
-				if hEntry.StateHash == stateHash && hEntry.Status == "VERIFIED" {
-					c.Verified = true
-					break
+			chipVer := c.Version
+			if chipVer == "" {
+				chipVer = "1.0.0"
+			}
+			if verEntry, verExists := mChip.Versions[chipVer]; verExists {
+				if verEntry.EnvironmentHash == stateHash {
+					// All combinations under this version share the same env hash;
+					// if any is VERIFIED, the chip environment is verified.
+					for _, comb := range verEntry.VerifiedCombinations {
+						if comb.Status == "VERIFIED" {
+							c.Verified = true
+							break
+						}
+					}
 				}
 			}
 		}
