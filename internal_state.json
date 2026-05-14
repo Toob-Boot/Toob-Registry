@@ -11,6 +11,17 @@
       "last_tested": "2026-05-14T18:39:03Z",
       "retry_count": 0
     },
+    "MT-31EC4884": {
+      "id": "MT-31EC4884",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.0.15",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.0",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-14T18:48:47Z",
+      "retry_count": 0
+    },
     "MT-3FD93412": {
       "id": "MT-3FD93412",
       "chip": "esp32c6",
@@ -31,6 +42,17 @@
       "compiler_version": "v1.1.0",
       "status": "INFRA_ERROR",
       "last_tested": "2026-05-14T18:39:03Z",
+      "retry_count": 0
+    },
+    "MT-B8AE02B4": {
+      "id": "MT-B8AE02B4",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.0.13",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.0",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-14T18:48:47Z",
       "retry_count": 0
     }
   }
