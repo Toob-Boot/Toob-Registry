@@ -77,38 +77,61 @@ Das ist funktional identisch mit den Schritten 1-3 der CI-Pipeline. Der Full-Bui
 
 ## 2. Compiler Image (Docker)
 
-> **Status:** Noch kein öffentliches Release. Die Versionierung ist vorbereitet, die Pipeline ist ein Stub.
+Das Compiler-Image (`mannomannx/toob-compiler`) enthält das CLI-Binary, alle Cross-Compilation-Abhängigkeiten (cmake, ninja, Python-Codegen), und einen Pre-Clone der Registry. Die Toolchains (GCC) werden beim ersten Build dynamisch heruntergeladen und in einem persistenten Volume gecacht.
 
-Das Compiler-Image enthält das CLI-Binary und alle Crosscompilation-Abhängigkeiten (cmake, ninja, GCC-Toolchains). Es wird aktuell nur lokal auf dem CI-Server per `docker-compose build` erzeugt.
+### Steuerung: `compiler/compiler_manifest.json`
 
-### Geplanter Workflow
+Das Manifest ist die **Single Source of Truth** für den Compiler-Build:
 
-Die CLI-Version bestimmt die Compiler-Version: Jedes CLI-Release soll automatisch ein neues Compiler-Image triggern, das dieses CLI-Binary einbäckt.
+| Feld | Verwendung |
+|------|------------|
+| `compiler_version` | Aktuelle Version (wird vom SemVer Enforcer hochgezählt) |
+| `protocol_version` | Kompatibilitäts-Vertrag zwischen CLI und Compiler. Änderung = MAJOR |
+| `cli.version` / `cli.source.ref` | Welche CLI in das Image eingebaut wird |
+| `base_image` | Docker Base-Image. Änderung = MINOR |
+| `system_packages` | APT-Pakete im Image. Änderung = MINOR |
+| `distribution.repository` | Docker Hub Ziel-Repository |
 
-**Trigger:** `compiler/v*`-Tag (geplant: automatisch nach erfolgreichem CLI-Release).
+### Automatischer Workflow
 
-**Pipeline:** `release-compiler.yml`
+**Phase 1 — SemVer Enforcer** (`semver-enforcer.yml`):
 
-**Geplanter Ablauf:**
-1. CLI-Binary aus dem zugehörigen `Toob-CLI-Release` herunterladen
-2. `Dockerfile.compiler` bauen (liegt in `cli/.pipeline-repo/Dockerfile.compiler`)
-3. Docker-Image mit Labels taggen (`toob.cli_version`)
-4. Push zu DockerHub als `toob-boot/toob-compiler:v{X.Y.Z}`
-5. Trigger der `version-index.yml`
+Wenn Code in `compiler/`, `cli/.pipeline-repo/Dockerfile.compiler` oder `toob-ci-build.sh` auf `main` gepusht wird:
 
-**Was noch fehlt:**
-- Die Pipeline referenziert ein Dockerfile im Root statt in `cli/.pipeline-repo/`
-- Es gibt keinen automatischen Trigger von `release-cli.yml` zu `release-compiler.yml`
-- DockerHub Push ist noch nicht implementiert
+1. Der Enforcer vergleicht das aktuelle Manifest gegen die Version des letzten `compiler/v*`-Tags
+2. Bestimmt den Bump-Typ:
+   - **MAJOR:** `protocol_version` geändert
+   - **MINOR:** `base_image` oder `system_packages` geändert
+   - **PATCH:** Alles andere (Skripte, Dockerfile-Optimierungen)
+3. Schreibt die neue `compiler_version` ins Manifest, committet `[skip ci]`
+4. Pusht `compiler/v{X.Y.Z}`-Tag
 
-### Manuelles Tagging (für Nachvollziehbarkeit)
+**Phase 2 — Compiler Publisher** (`release-compiler.yml`):
 
-Auch ohne funktionierende Pipeline kann der Tag gesetzt werden, um den Stand zu markieren:
+Wenn ein `compiler/v*`-Tag gepusht wird (automatisch durch Enforcer oder manuell):
+
+1. Liest CLI-Version, Protokoll-Version und Repository aus dem Manifest
+2. Baut `Dockerfile.compiler` mit `--build-arg CLI_VERSION`, `PROTOCOL_VERSION`
+3. Verifiziert Docker-Labels (`toob.protocol_version`)
+4. Pusht Image zu Docker Hub als `v{X.Y.Z}` + `latest`
+
+> **Hinweis:** Die Pipeline läuft auf dem selbstgehosteten CI-Server via `act`. Die Bedingung `if: github.event.act` stellt sicher, dass sie nur dort ausgeführt wird.
+
+**Phase 3 — CLI-Sync** (`sync-cli-release.yml`):
+
+Wenn ein neues CLI-Release publiziert wird, sendet `Toob-CLI-Release` ein `repository_dispatch(cli_published)`. Der Sync-Workflow aktualisiert automatisch `cli.version` und `cli.source.ref` im Manifest. Dieser Commit löst den Enforcer erneut aus → neuer Compiler-Tag → neues Image.
+
+### Manueller Compiler Release
 
 ```bash
-git tag compiler/v{X.Y.Z} -m "Compiler v{X.Y.Z}: aligned with CLI v{X.Y.Z}"
+# 1. Sicherstellen, dass compiler_manifest.json aktuell ist
+cat compiler/compiler_manifest.json | jq '.cli.version, .protocol_version'
+
+# 2. Tag pushen (löst die Pipeline auf dem CI-Server aus)
+git tag compiler/v{X.Y.Z}
 git push origin compiler/v{X.Y.Z}
 ```
+
 
 ---
 
