@@ -1,1 +1,36 @@
-{}
+{
+  "esp32c6": {
+    "versions": {
+      "1.1.0": {
+        "environment_hash": "c3099991b95315233b8ea5dadc2cab170d139b30e1ef1164b90ed80cfa32930c",
+        "dependencies": {
+          "toolchain": "riscv32-esp-elf@13.2.0_20230928",
+          "vendor": "esp@1.0.1",
+          "arch": "riscv32@1.0.0"
+        },
+        "verified_combinations": {
+          "chip=esp32c6@1.1.0::cli=cli/v0.0.13::core=0.0.1::compiler=v0.1.2": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-14T17:13:35Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.0.15::core=0.0.1::compiler=v0.1.2": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-14T17:13:35Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.2.0::core=0.0.1::compiler=v0.1.2": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-14T17:13:35Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.2.1::core=0.0.1::compiler=v0.1.2": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-14T17:13:35Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.2.2::core=0.0.1::compiler=v0.1.2": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-14T17:13:35Z"
+          }
+        }
+      }
+    }
+  }
+}
