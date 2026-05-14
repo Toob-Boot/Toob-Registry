@@ -1,183 +1,174 @@
-# Toob Ecosystem: Release Lifecycle & Triggers
+# Toob Release Pipeline
 
-Dieses Dokument beschreibt die Release-Kanäle, Auslöser (Triggers) und die konkreten Schritte zum Releasen jeder Komponente im Toob-Ökosystem.
+All components live in the `Toob-Boot/Toob-Loader` monorepo. Version tagging is fully automated by the **SemVer Enforcer** (`semver-enforcer.yml`), which runs on GitHub Actions on every push to `main`.
 
----
+## Architecture
 
-## 1. CLI (`Toob-CLI-Release`)
-
-Die CLI ist ein eigenständig versioniertes Go-Binary, das über GitHub Releases an Endnutzer verteilt wird. Da die CLI unabhängig vom Compiler-Container deployed wird, ist hier **Version-Skew möglich** — weshalb ein striktes SemVer-System mit automatischer Erkennung existiert.
-
-### Automatischer Workflow (SemVer Enforcer)
-
-Wenn Code in `cli/toob-cli/` auf `main` gepusht wird, läuft der **SemVer Enforcer** (`semver-enforcer.yml`):
-
-1. Erkennt, welche Monorepo-Bereiche sich geändert haben (Core, CLI, Chips, etc.)
-2. Für CLI-Änderungen: Vergleicht die aktuelle `ports.go` per AST-Diff mit der Version des letzten `cli/v*`-Tags
-3. Bestimmt den Bump-Typ: `MAJOR` (Breaking), `MINOR` (neue Features), `PATCH` (Bugfixes)
-4. Pusht automatisch einen neuen `cli/v{X.Y.Z}`-Tag
-
-Dieser Tag-Push löst die **Release-Pipeline** aus.
-
-### Release-Pipeline (`release-cli.yml`)
-
-**Trigger:** Push eines `cli/v*`-Tags (automatisch vom SemVer Enforcer oder manuell).
-
-**Ablauf:**
-1. Checkout des getaggten Commits
-2. `go test ./internal/ports/ -count=1` — Vertragsprüfung (assertions_test.go)
-3. Cross-Compilation für 4 Targets: `windows/amd64`, `linux/amd64`, `darwin/amd64`, `darwin/arm64`
-4. UPX-Kompression für Windows und Linux Binaries
-5. SHA256-Checksummen generieren
-6. Upload als GitHub Release in `Toob-Boot/Toob-CLI-Release`
-7. Trigger der `version-index.yml` in der Registry
-
-> **Hinweis:** Die Pipeline läuft auf dem selbstgehosteten CI-Server via `act` (nicht direkt auf GitHub Actions). Die Bedingung `if: github.event.act` stellt sicher, dass sie nur in dieser Umgebung ausgeführt wird.
-
-### CLI Release — Manuelle Schritte
-
-Falls du manuell releasen willst (z.B. für ein Hotfix):
-
-```bash
-# 1. Sicherstellen, dass alle Port-Tests grün sind
-cd cli/toob-cli
-go test ./internal/ports/ -count=1 -v
-
-# 2. SemVer bestimmen (optional, zur Kontrolle)
-go build -o /tmp/semver-tool ./internal/ports/cmd/semver
-git show HEAD~1:cli/toob-cli/internal/ports/ports.go > /tmp/ports_old.go
-/tmp/semver-tool /tmp/ports_old.go ./internal/ports/ports.go
-
-# 3. Tag pushen (löst die Release-Pipeline auf dem CI-Server aus)
-git tag cli/v{X.Y.Z} -m "CLI v{X.Y.Z}: ..."
-git push origin cli/v{X.Y.Z}
+```
+Push to main
+     │
+     ▼
+SemVer Enforcer (GitHub Actions)
+     │  AST-diff (CLI), ABI-diff (Core), Manifest-diff (Compiler)
+     │
+     ├── cli/vX.Y.Z tag ──► CI Server (act) ──► release-cli.yml
+     │                              │
+     │                              ▼
+     │                        Draft Release on Toob-CLI-Release
+     │                              │
+     │                         [Manual Publish]
+     │                              │
+     │                              ▼
+     │                     cli-release-notify.yml (GitHub Actions)
+     │                              │
+     │                              ▼
+     │                     sync-cli-release.yml (GitHub Actions)
+     │                     updates compiler_manifest.json
+     │                              │
+     │                              ▼
+     │                     Enforcer runs again → compiler/vX.Y.Z tag
+     │
+     ├── compiler/vX.Y.Z tag ──► CI Server (act) ──► release-compiler.yml
+     │                                                      │
+     │                                                      ▼
+     │                                               Docker Hub push
+     │
+     └── core/vX.Y.Z tag ──► CI Server (act) ──► release-core.yml
 ```
 
-### PR-Tests für die CLI
+**Key constraint:** Tags pushed by GitHub Actions do not trigger webhooks. The CI server must be notified manually or via `repository_dispatch` for compiler and core releases.
 
-Wenn ein PR Änderungen an `cli/toob-cli/` enthält, wird die CLI automatisch auf dem CI-Server in einem **Compiler Container** getestet. Der `toob-ci-build.sh` im PR-Modus führt folgende Schritte aus:
+---
 
-1. `go test ./internal/ports/ -count=1` — Port-Contract Assertions
-2. `git show origin/main:cli/toob-cli/internal/ports/ports.go` — Holt die Baseline
-3. `go run ./internal/ports/cmd/semver` — AST-Diff gegen `main`, Erkennung von Breaking Changes
-4. `toob build --native` — Kompiliert den gesamten Firmware-Stack als End-to-End-Test
+## 1. CLI
 
-Für **lokales Testen** vor dem PR reicht:
+**Source:** `cli/toob-cli/` in the monorepo.  
+**Distribution:** GitHub Releases on `Toob-Boot/Toob-CLI-Release`.
+
+### Automatic Flow
+
+1. Push to `main` with changes in `cli/toob-cli/`
+2. Enforcer compares `ports.go` AST against last `cli/v*` tag
+3. Determines bump: MAJOR (breaking), MINOR (new exports), PATCH (internal)
+4. Pushes `cli/vX.Y.Z` tag
+5. CI server runs `release-cli.yml` via `act`:
+   - Cross-compiles for `windows/amd64`, `linux/amd64`, `darwin/amd64`, `darwin/arm64`
+   - UPX compression, SHA256 checksums, Minisign signatures
+   - Creates **draft** release on `Toob-CLI-Release`
+6. **Manual step:** Publish the draft on GitHub
+7. Publishing triggers `cli-release-notify.yml` → dispatches `cli_published` to monorepo
+8. `sync-cli-release.yml` updates `compiler_manifest.json` with new CLI version
+9. This commit triggers the Enforcer again → new `compiler/v*` tag
+
+### Manual Release
 
 ```bash
-cd cli/toob-cli
-go test ./internal/ports/ -count=1 -v   # Contract Assertions
-go vet ./...                             # Static Analysis
-go build .                               # Kompiliert die CLI
+git tag cli/vX.Y.Z
+git push origin cli/vX.Y.Z
 ```
-
-Das ist funktional identisch mit den Schritten 1-3 der CI-Pipeline. Der Full-Build (Schritt 4) erfordert den Compiler Container und ist lokal nur mit Docker möglich.
 
 ---
 
-## 2. Compiler Image (Docker)
+## 2. Compiler Image
 
-Das Compiler-Image (`mannomannx/toob-compiler`) enthält das CLI-Binary, alle Cross-Compilation-Abhängigkeiten (cmake, ninja, Python-Codegen), und einen Pre-Clone der Registry. Die Toolchains (GCC) werden beim ersten Build dynamisch heruntergeladen und in einem persistenten Volume gecacht.
+**Source:** `compiler/compiler_manifest.json` + `cli/.pipeline-repo/Dockerfile.compiler`.  
+**Distribution:** `mannomannx/toob-compiler` on Docker Hub.
 
-### Steuerung: `compiler/compiler_manifest.json`
+### Manifest Fields
 
-Das Manifest ist die **Single Source of Truth** für den Compiler-Build:
+| Field | Bump Level |
+|-------|-----------|
+| `protocol_version` | MAJOR |
+| `base_image`, `system_packages` | MINOR |
+| Everything else | PATCH |
 
-| Feld | Verwendung |
-|------|------------|
-| `compiler_version` | Aktuelle Version (wird vom SemVer Enforcer hochgezählt) |
-| `protocol_version` | Kompatibilitäts-Vertrag zwischen CLI und Compiler. Änderung = MAJOR |
-| `cli.version` / `cli.source.ref` | Welche CLI in das Image eingebaut wird |
-| `base_image` | Docker Base-Image. Änderung = MINOR |
-| `system_packages` | APT-Pakete im Image. Änderung = MINOR |
-| `distribution.repository` | Docker Hub Ziel-Repository |
+### Automatic Flow
 
-### Automatischer Workflow
+1. Enforcer detects changes in `compiler/*`, `Dockerfile.compiler`, or `toob-ci-build.sh`
+2. Compares manifest against last `compiler/v*` tag, determines bump
+3. Writes new `compiler_version`, commits `[skip ci]`, pushes tag
+4. CI server runs `release-compiler.yml` via `act`:
+   - Reads CLI version, protocol version from manifest
+   - Builds Docker image with pinned CLI binary
+   - Pushes to Docker Hub as `vX.Y.Z` + `latest`
+   - Updates `compiler_version` in manifest, commits `[skip ci]`
+   - Triggers `version-index.yml` in Registry
 
-**Phase 1 — SemVer Enforcer** (`semver-enforcer.yml`):
-
-Wenn Code in `compiler/`, `cli/.pipeline-repo/Dockerfile.compiler` oder `toob-ci-build.sh` auf `main` gepusht wird:
-
-1. Der Enforcer vergleicht das aktuelle Manifest gegen die Version des letzten `compiler/v*`-Tags
-2. Bestimmt den Bump-Typ:
-   - **MAJOR:** `protocol_version` geändert
-   - **MINOR:** `base_image` oder `system_packages` geändert
-   - **PATCH:** Alles andere (Skripte, Dockerfile-Optimierungen)
-3. Schreibt die neue `compiler_version` ins Manifest, committet `[skip ci]`
-4. Pusht `compiler/v{X.Y.Z}`-Tag
-
-**Phase 2 — Compiler Publisher** (`release-compiler.yml`):
-
-Wenn ein `compiler/v*`-Tag gepusht wird (automatisch durch Enforcer oder manuell):
-
-1. Liest CLI-Version, Protokoll-Version und Repository aus dem Manifest
-2. Baut `Dockerfile.compiler` mit `--build-arg CLI_VERSION`, `PROTOCOL_VERSION`
-3. Verifiziert Docker-Labels (`toob.protocol_version`)
-4. Pusht Image zu Docker Hub als `v{X.Y.Z}` + `latest`
-
-> **Hinweis:** Die Pipeline läuft auf dem selbstgehosteten CI-Server via `act`. Die Bedingung `if: github.event.act` stellt sicher, dass sie nur dort ausgeführt wird.
-
-**Phase 3 — CLI-Sync** (`sync-cli-release.yml`):
-
-Wenn ein neues CLI-Release publiziert wird, sendet `Toob-CLI-Release` ein `repository_dispatch(cli_published)`. Der Sync-Workflow aktualisiert automatisch `cli.version` und `cli.source.ref` im Manifest. Dieser Commit löst den Enforcer erneut aus → neuer Compiler-Tag → neues Image.
-
-### Manueller Compiler Release
+### Manual Release
 
 ```bash
-# 1. Sicherstellen, dass compiler_manifest.json aktuell ist
-cat compiler/compiler_manifest.json | jq '.cli.version, .protocol_version'
+# Verify manifest has correct CLI version (must be a published release)
+jq '.cli.version, .cli.source.ref' compiler/compiler_manifest.json
 
-# 2. Tag pushen (löst die Pipeline auf dem CI-Server aus)
-git tag compiler/v{X.Y.Z}
-git push origin compiler/v{X.Y.Z}
+git tag compiler/vX.Y.Z
+git push origin compiler/vX.Y.Z
 ```
 
+> **Important:** The CLI version in the manifest must point to a **published** GitHub Release. Draft releases don't have downloadable binaries.
 
 ---
 
-## 3. Core SDK (`Toob-Loader`)
+## 3. Core SDK
 
-- **Trigger:** Push auf `main` mit Änderungen in `toobloader/`, `sdk/`, `common/` löst den SemVer Enforcer aus.
-- **Automatik:** Der Enforcer kompiliert den alten und neuen C-Code, vergleicht die ABI-Kompatibilität via `abidiff`, und pusht automatisch einen `core/v*`-Tag.
-- **Pipeline:** `release-core.yml` packt den C-Code in eine `.zip` und erstellt ein GitHub Release im Monorepo.
-- **Downstream:** Triggert die `version-index.yml` in der Registry.
+**Source:** `toobloader/`, `sdk/`, `common/` in the monorepo.  
+**Distribution:** GitHub Releases on `Toob-Boot/Toob-Loader`.
 
----
-
-## 4. Registry Hardware-Manifeste (`Toob-Registry`)
-
-- **Trigger:** Merge auf `main` mit Änderungen in `chips/`, `arch/`, `vendor/` oder `toolchains/`.
-- **Pipeline:** `main-release.yml` (Registry Auto-Release).
-- **Ablauf:**
-  1. SemVer-Vererbungskette berechnen (siehe [Dependency Versioning](dependency_versioning.md))
-  2. Neue `registry.json` generieren und `registry_version` bumpen
-  3. Git-Tag pushen (z.B. `v1.0.8`)
-  4. `version-index.yml` triggern (Topology-Update)
-  5. `compatibility-matrix.yml` triggern (Matrix-Farm re-test)
+1. Enforcer compiles old and new C code, runs `abidiff`
+2. Pushes `core/vX.Y.Z` tag
+3. CI server runs `release-core.yml` via `act`
 
 ---
 
-## 5. Die SemVer-Vererbung (Hochvererbung)
+## 4. Registry
 
-Die Registry hat eine strikte Vererbungskette. Änderungen an Basis-Komponenten schlagen wie eine Welle nach oben bis zur globalen Registry-Version durch.
+**Source:** `chips/`, `arch/`, `vendor/`, `toolchains/` in `Toob-Registry`.  
+**Distribution:** Git tags on `Toob-Boot/Toob-Registry`.
 
-**Die Regel der Hochvererbung:**
-Die höchste Schwereklasse (`MAJOR` > `MINOR` > `PATCH`) einer Unter-Komponente erzwingt zwingend denselben Versions-Bump für alle übergeordneten Komponenten, die von ihr abhängig sind.
+1. Merge to `main` with hardware manifest changes
+2. `main-release.yml` calculates SemVer inheritance chain
+3. Bumps `registry_version`, pushes tag (e.g. `v1.0.8`)
+4. Triggers `version-index.yml` and `compatibility-matrix.yml`
 
-**Beispiel einer Kettenreaktion:**
+### SemVer Inheritance
 
-1. Ein Entwickler fixt einen Bug im Espressif Vendor-Code (`vendor/esp`). Das Vendor-Manifest erhält ein **`PATCH` (+0.0.1)**.
-2. In der gleichen PR fügt er ein neues Feature für die RISC-V Architektur (`arch/riscv32`) hinzu. Das Architektur-Manifest erhält ein **`MINOR` (+0.1.0)**.
-3. **Chip-Vererbung:** Der Chip `esp32c6` hängt von beidem ab. Die `semver_calc.go` vergleicht die Bumps: `MINOR` ist höher als `PATCH`. Obwohl am Chip-Code selbst kein einziges Zeichen verändert wurde, wird die Version des Chips automatisch um ein **`MINOR`** gebumped.
-4. **Registry-Vererbung:** Da sich mindestens ein Chip innerhalb der Registry um ein `MINOR` verändert hat, wird auch die globale `registry_version` in der `registry.json` zwingend um ein **`MINOR`** gebumped (z.B. von `v1.0.7` auf `v1.1.0`).
+Changes cascade upward. The highest bump in any dependency determines the parent's bump:
+
+```
+vendor/esp (PATCH) + arch/riscv32 (MINOR)
+  → chip/esp32c6 inherits MINOR
+    → registry_version inherits MINOR
+```
 
 ---
 
-## 6. Der "Single Source of Truth" Kreislauf
+## 5. Infrastructure
 
-Das Herzstück dieser gesamten Automatisierung ist die Datei `version_index.json`.
+### CI Server
 
-Egal, auf welchem der oben genannten Kanäle ein Release stattfindet — **alle Wege führen am Ende zum Index-Generator**.
-Da die Pipelines aus dem Monorepo (`release-core` und `release-cli`) sowie die Registry-Pipeline sich gegenseitig antriggern, friert die `version_index.json` nach jeder kleinsten Bewegung im Ökosystem den exakten Zustand ein.
+- **Host:** Hetzner VPS at `ci.the-toob.com`
+- **Stack:** Docker Compose (`toob-ci` daemon + Caddy reverse proxy)
+- **Execution:** GitHub workflows run via [nektos/act](https://github.com/nektos/act) inside `toob-release-runner` containers
 
-Clients, CLIs und Matrix-Worker müssen somit keine teuren API-Requests an GitHub oder DockerHub senden, sondern können sich blind auf diese eine, aggregierte Datei verlassen, um zu wissen, welche Core-SDKs, CLIs und Compiler-Images offiziell miteinander kompatibel existieren.
+### Webhook Configuration (GitHub → CI Server)
+
+| Setting | Value |
+|---------|-------|
+| Payload URL | `https://ci.the-toob.com/hooks/release` |
+| Content type | `application/json` |
+| Secret | Same as `WEBHOOK_SECRET` in `docker-compose.yml` |
+| Events | Pushes |
+
+### Known Limitation
+
+Tags pushed by GitHub Actions workflows (e.g. by the Enforcer) do **not** trigger GitHub webhooks. Compiler and Core releases therefore require either:
+- A manual webhook simulation from the CI server
+- A `repository_dispatch` from the Enforcer to the CI server
+
+---
+
+## 6. Version Index
+
+`version_index.json` is the single aggregated view of all ecosystem versions. It is regenerated by `version-index.yml` after every release and pulls data from:
+- GitHub API (CLI releases, Core releases, Registry tags)
+- Docker Hub API (Compiler image tags)
+- Local `registry.json` (hardware manifest versions)
