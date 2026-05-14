@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-14T15:37:57Z",
+    "generated_at": "2026-05-14T18:43:37Z",
     "main_branch": {
         "chips": [
             {
@@ -31,11 +31,6 @@
         ],
         "integrations": [
             {
-                "name": "baremetal",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
-            },
-            {
                 "name": "espidf",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/espidf"
@@ -44,6 +39,11 @@
                 "name": "zephyr",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/zephyr"
+            },
+            {
+                "name": "baremetal",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
             }
         ]
     },
@@ -149,6 +149,10 @@
             }
         ],
         "compiler": [
+            {
+                "version": "v1.1.0",
+                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
+            },
             {
                 "version": "v0.1.2",
                 "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
