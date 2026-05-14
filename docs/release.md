@@ -179,6 +179,43 @@ To work around this:
 
 > **Note:** The CI server gracefully ignores non-push events or events without a valid commit SHA (e.g., tag `create` or `release` events from GitHub) with a `200 OK` to prevent webhook delivery failures in the GitHub UI.
 
+### Deploying Updates to the CI Server
+
+If you make changes to the CI logic (`Toob-CLI-Pipeline`) or the registry compilation scripts (`Toob-Registry`), you must deploy these updates to the CI VPS.
+
+1. **Connect to the VPS via SSH** using your private key.
+2. **Navigate** to the repository root: `cd /root/Toob-Loader`
+3. **Pull Submodules:** Depending on what you updated, go into the submodule directories and pull the latest `main` branch.
+   - For CI logic: `cd cli/.pipeline-repo && git pull origin main`
+   - For Registry scripts: `cd ../../toob-registry && git pull origin main`
+4. **Rebuild & Restart:** Navigate to the CI repository directory and recreate the Docker containers.
+   ```bash
+   cd /root/Toob-Loader/cli/.pipeline-repo
+   docker compose down
+   docker compose build toob-ci
+   docker compose up -d
+   ```
+   *Note: The `toob-ci` container will automatically compile the internal Go scripts from the Registry on startup.*
+
+### Administration Endpoints
+
+The CI Server exposes several administrative endpoints. They all require the `WEBHOOK_SECRET` (located in the VPS's `.env` file) to be passed via the `Authorization: Bearer` header.
+
+You can trigger them via `curl` from your local machine or directly on the VPS:
+```bash
+curl -X POST https://ci.the-toob.com/api/v1/admin/<ENDPOINT> \
+     -H "Authorization: Bearer <DEIN_WEBHOOK_SECRET>"
+```
+
+**1. Soft Retrigger (`/api/v1/admin/matrix-trigger`)**
+Clears all *failed* (unverified) jobs from the queue and awakens the Matrix Poller to retry them. Verified entries remain untouched.
+
+**2. Hard Reset (`/api/v1/admin/matrix-reset`)**
+Whenever structural changes are made to the Toolchain or Compatibility Matrix architecture, perform a **Hard Reset**. This drops the entire `ledger.db` and local JSON caches, forcing the Poller to rebuild and retest the matrix completely from scratch.
+
+**3. Clear Zombies (`/api/v1/admin/clear-zombies`)**
+If a release pipeline crashes unexpectedly, this endpoint manually destroys any "zombie" `act` runner containers left behind by the Docker daemon without needing to restart the `toob-ci` orchestrator.
+
 ---
 
 ## 6. Version Index

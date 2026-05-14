@@ -262,8 +262,8 @@ func main() {
 	stmtDeleteState, _ := tx.Prepare(`DELETE FROM internal_state WHERE job_id = ?`)
 	stmtUpsertState, _ := tx.Prepare(`
 		INSERT INTO internal_state (
-			job_id, chip, chip_version, cli_version, core_version, compiler_version, status, last_tested, retry_count
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			job_id, chip, chip_version, toolchain_version, cli_version, core_version, compiler_version, status, last_tested, retry_count
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(job_id) DO UPDATE SET 
 			status=excluded.status, 
 			last_tested=excluded.last_tested, 
@@ -385,7 +385,7 @@ func main() {
 			}
 
 			_, err = stmtUpsertState.Exec(
-				jobID, result.Chip, chipManifestVer, result.CliVersion, result.CoreVersion, result.CompilerVersion,
+				jobID, result.Chip, chipManifestVer, result.ToolchainVersion, result.CliVersion, result.CoreVersion, result.CompilerVersion,
 				result.Status, timestamp, retryCount,
 			)
 			if err == nil {
