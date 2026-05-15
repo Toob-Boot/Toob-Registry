@@ -68,6 +68,14 @@
             "status": "VERIFIED",
             "last_tested": "2026-05-15T19:43:35Z"
           },
+          "chip=esp32c6@1.1.0::cli=cli/v0.3.7::core=0.0.1::compiler=v1.1.5": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-15T20:43:37Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.3.7::core=0.0.1::compiler=v1.1.6": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-15T20:43:37Z"
+          },
           "chip=esp32c6@1.1.0::cli=cli/v0.4.2::core=0.0.1::compiler=v0.1.2": {
             "status": "VERIFIED",
             "last_tested": "2026-05-15T19:43:34Z"
@@ -75,6 +83,14 @@
           "chip=esp32c6@1.1.0::cli=cli/v0.4.2::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
             "last_tested": "2026-05-15T19:43:34Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.4.2::core=0.0.1::compiler=v1.1.5": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-15T20:43:37Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.4.2::core=0.0.1::compiler=v1.1.6": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-15T20:43:37Z"
           }
         }
       }
