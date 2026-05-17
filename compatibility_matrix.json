@@ -468,6 +468,14 @@
             "status": "VERIFIED",
             "last_tested": "2026-05-17T22:44:27Z"
           },
+          "chip=esp32c6@1.1.0::cli=cli/v0.5.3::core=0.0.1::compiler=v1.1.4": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-17T22:44:33Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.5.3::core=0.0.1::compiler=v1.1.5": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-17T22:44:33Z"
+          },
           "chip=esp32c6@1.1.0::cli=cli/v0.5.3::core=0.0.1::compiler=v1.1.7": {
             "status": "VERIFIED",
             "last_tested": "2026-05-17T22:44:10Z"
