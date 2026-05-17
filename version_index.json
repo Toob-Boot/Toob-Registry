@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-17T16:02:34Z",
+    "generated_at": "2026-05-17T16:34:55Z",
     "main_branch": {
         "chips": [
             {
@@ -169,6 +169,10 @@
             }
         ],
         "compiler": [
+            {
+                "version": "v1.1.10",
+                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
+            },
             {
                 "version": "v1.1.9",
                 "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
