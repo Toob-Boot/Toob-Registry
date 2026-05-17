@@ -315,6 +315,10 @@
           "chip=esp32c6@1.1.0::cli=cli/v0.5.1::core=0.0.1::compiler=v1.1.4": {
             "status": "VERIFIED",
             "last_tested": "2026-05-17T16:45:58Z"
+          },
+          "chip=esp32c6@1.1.0::cli=cli/v0.5.1::core=0.0.1::compiler=v1.1.5": {
+            "status": "VERIFIED",
+            "last_tested": "2026-05-17T16:46:08Z"
           }
         }
       }
