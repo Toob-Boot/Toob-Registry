@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-17T15:59:13Z",
+    "generated_at": "2026-05-17T16:02:34Z",
     "main_branch": {
         "chips": [
             {
@@ -122,6 +122,10 @@
         ],
         "cli": [
             {
+                "version": "cli/v0.5.0",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.5.0"
+            },
+            {
                 "version": "cli/v0.4.3",
                 "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.4.3"
             },
@@ -165,6 +169,10 @@
             }
         ],
         "compiler": [
+            {
+                "version": "v1.1.9",
+                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
+            },
             {
                 "version": "v1.1.8",
                 "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
