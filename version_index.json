@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-17T16:38:53Z",
+    "generated_at": "2026-05-17T16:46:52Z",
     "main_branch": {
         "chips": [
             {
@@ -31,6 +31,11 @@
         ],
         "integrations": [
             {
+                "name": "baremetal",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
+            },
+            {
                 "name": "espidf",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/espidf"
@@ -39,11 +44,6 @@
                 "name": "zephyr",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/zephyr"
-            },
-            {
-                "name": "baremetal",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
             }
         ]
     },
@@ -124,10 +124,6 @@
             {
                 "version": "cli/v0.5.1",
                 "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.5.1"
-            },
-            {
-                "version": "cli/v0.5.0",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.5.0"
             },
             {
                 "version": "cli/v0.4.3",
