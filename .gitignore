@@ -3,3 +3,7 @@ ledger.db-wal
 ledger.db-shm
 vendor/
 result_*.json.processing
+
+# CLI runtime cache (written by Cache.Checkout)
+versions/
+active_version

@@ -102,7 +102,6 @@ git push origin cli/vX.Y.Z
    - Updates `compiler_version` in manifest, commits `[skip ci]`
    - Triggers `version-index.yml` in Registry
 
-
 ### Manual Release
 
 ```bash
@@ -171,9 +170,10 @@ vendor/esp (PATCH) + arch/riscv32 (MINOR)
 
 ### Known Limitation
 
-Tags pushed by GitHub Actions workflows (e.g. by the Enforcer) do **not** trigger GitHub webhooks. 
+Tags pushed by GitHub Actions workflows (e.g. by the Enforcer) do **not** trigger GitHub webhooks.
 
 To work around this:
+
 - **Compiler:** The `compiler-promote.yml` workflow explicitly sends a `curl` webhook to the CI server after the draft release is manually published.
 - **CLI / Core:** Currently require a manual webhook simulation from the CI server or a `repository_dispatch` from the Enforcer.
 
@@ -195,20 +195,21 @@ If you make changes to the CI logic (`Toob-CLI-Pipeline`) or the registry compil
    docker compose build toob-ci
    docker compose up -d
    ```
-   *Note: The `toob-ci` container will automatically compile the internal Go scripts from the Registry on startup.*
+   _Note: The `toob-ci` container will automatically compile the internal Go scripts from the Registry on startup._
 
 ### Administration Endpoints
 
 The CI Server exposes several administrative endpoints. They all require the `WEBHOOK_SECRET` (located in the VPS's `.env` file) to be passed via the `Authorization: Bearer` header.
 
 You can trigger them via `curl` from your local machine or directly on the VPS:
+
 ```bash
 curl -X POST https://ci.the-toob.com/api/v1/admin/<ENDPOINT> \
      -H "Authorization: Bearer <DEIN_WEBHOOK_SECRET>"
 ```
 
 **1. Soft Retrigger (`/api/v1/admin/matrix-trigger`)**
-Clears all *failed* (unverified) jobs from the queue and awakens the Matrix Poller to retry them. Verified entries remain untouched.
+Clears all _failed_ (unverified) jobs from the queue and awakens the Matrix Poller to retry them. Verified entries remain untouched.
 
 **2. Hard Reset (`/api/v1/admin/matrix-reset`)**
 Whenever structural changes are made to the Toolchain or Compatibility Matrix architecture, perform a **Hard Reset**. This drops the entire `ledger.db` and local JSON caches, forcing the Poller to rebuild and retest the matrix completely from scratch.
