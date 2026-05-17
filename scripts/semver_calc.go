@@ -104,20 +104,41 @@ func checkFolderChanges(shaBefore, shaCurrent, folder string) bool {
 	return false
 }
 
-// getAutoBumpType reads commit history to determine bump type
+// getAutoBumpType determines the bump type using structural file analysis first,
+// then falls back to conventional commit message parsing.
+// Structural rules (take priority):
+//   - Deleted .h or .ld files → MAJOR (ABI/memory-layout break)
+//   - New .h or .c files     → MINOR (new public API surface)
+//   - Otherwise              → fall through to commit parsing
 func getAutoBumpType(shaBefore, shaCurrent, folder string) int {
-	cmd := exec.Command("git", "log", "--oneline", fmt.Sprintf("%s..%s", shaBefore, shaCurrent), folder)
-	out, err := cmd.Output()
-	if err != nil {
-		return BumpPatch
+	// Structural analysis: check what types of file operations occurred
+	diffCmd := exec.Command("git", "diff", "--diff-filter=D", "--name-only",
+		fmt.Sprintf("%s..%s", shaBefore, shaCurrent), folder)
+	if delOut, err := diffCmd.Output(); err == nil {
+		for _, line := range strings.Split(string(delOut), "\n") {
+			ext := filepath.Ext(strings.TrimSpace(line))
+			if ext == ".h" || ext == ".ld" {
+				return BumpMajor
+			}
+		}
 	}
-	logOutput := string(out)
-	if strings.Contains(logOutput, "BREAKING CHANGE:") || strings.Contains(logOutput, "feat!:") || strings.Contains(logOutput, "fix!:") {
-		return BumpMajor
+
+	addCmd := exec.Command("git", "diff", "--diff-filter=A", "--name-only",
+		fmt.Sprintf("%s..%s", shaBefore, shaCurrent), folder)
+	if addOut, err := addCmd.Output(); err == nil {
+		hasNewPublicFiles := false
+		for _, line := range strings.Split(string(addOut), "\n") {
+			ext := filepath.Ext(strings.TrimSpace(line))
+			if ext == ".h" || ext == ".c" {
+				hasNewPublicFiles = true
+				break
+			}
+		}
+		if hasNewPublicFiles {
+			return BumpMinor
+		}
 	}
-	if strings.Contains(logOutput, "feat:") {
-		return BumpMinor
-	}
+
 	return BumpPatch
 }
 
