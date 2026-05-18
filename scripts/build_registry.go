@@ -15,15 +15,27 @@ import (
 	"strings"
 )
 
+type ChipSources struct {
+	Startup  string   `json:"startup"`
+	Platform string   `json:"platform"`
+	Config   string   `json:"config"`
+	Linker   string   `json:"linker"`
+	Hardware string   `json:"hardware"`
+	Drivers  []string `json:"drivers,omitempty"`
+	Extra    []string `json:"extra,omitempty"`
+}
+
 type ChipManifest struct {
-	Name             string `json:"name"`
-	Vendor           string `json:"vendor"`
-	Arch             string `json:"arch"`
-	CompilerPrefix   string `json:"compiler_prefix"`
-	Description      string `json:"description"`
-	Version          string `json:"version"`
-	Path             string `json:"path,omitempty"`
-	Verified         bool   `json:"verified"`
+	Name             string                            `json:"name"`
+	Arch             string                            `json:"arch"`
+	CompilerPrefix   string                            `json:"compiler_prefix"`
+	Description      string                            `json:"description"`
+	Version          string                            `json:"version"`
+	Path             string                            `json:"path,omitempty"`
+	Verified         bool                              `json:"verified"`
+	Sources          *ChipSources                      `json:"sources,omitempty"`
+	Includes         []string                          `json:"includes,omitempty"`
+	DriverConfigs    map[string]map[string]interface{} `json:"driver_configs,omitempty"`
 }
 
 type ToolchainEntry struct {
@@ -34,12 +46,6 @@ type ToolchainEntry struct {
 	Sha256          map[string]string `json:"sha256"`
 }
 
-type VendorEntry struct {
-	Name        string `json:"name"`
-	Path        string `json:"path"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-}
 
 type ArchEntry struct {
 	Name        string `json:"name"`
@@ -55,6 +61,21 @@ type IntegrationEntry struct {
 	Description string `json:"description"`
 }
 
+type DriverConfigField struct {
+	Type        string      `json:"type"`
+	Default     interface{} `json:"default"`
+	Description string      `json:"description,omitempty"`
+}
+
+type DriverEntry struct {
+	Name         string                       `json:"name"`
+	Path         string                       `json:"path"`
+	Version      string                       `json:"version"`
+	Description  string                       `json:"description"`
+	Category     string                       `json:"category"`
+	ConfigSchema map[string]DriverConfigField `json:"config_schema,omitempty"`
+}
+
 type EcosystemIndex struct {
 	Cli      []string `json:"cli"`
 	CoreSDK  []string `json:"core_sdk"`
@@ -67,9 +88,9 @@ type Registry struct {
 	Ecosystem       *EcosystemIndex           `json:"ecosystem,omitempty"`
 	Chips           map[string]ChipManifest   `json:"chips"`
 	Toolchains      map[string]ToolchainEntry `json:"toolchains"`
-	Vendors         map[string]VendorEntry    `json:"vendors"`
-	Archs           map[string]ArchEntry      `json:"archs"`
-	Integrations    map[string]IntegrationEntry `json:"integrations"`
+	Archs           map[string]ArchEntry          `json:"archs"`
+	Drivers         map[string]DriverEntry        `json:"drivers"`
+	Integrations    map[string]IntegrationEntry   `json:"integrations"`
 }
 
 func main() {
@@ -99,11 +120,11 @@ func main() {
 	}
 	newToolchains := make(map[string]ToolchainEntry)
 
-	oldVendors := registry.Vendors
-	if oldVendors == nil {
-		oldVendors = make(map[string]VendorEntry)
+	oldDrivers := registry.Drivers
+	if oldDrivers == nil {
+		oldDrivers = make(map[string]DriverEntry)
 	}
-	newVendors := make(map[string]VendorEntry)
+	newDrivers := make(map[string]DriverEntry)
 
 	oldArchs := registry.Archs
 	if oldArchs == nil {
@@ -138,10 +159,24 @@ func main() {
 	var rawReg struct {
 		Chips      map[string]json.RawMessage `json:"chips"`
 		Toolchains map[string]json.RawMessage `json:"toolchains"`
-		Vendors    map[string]json.RawMessage `json:"vendors"`
-		Archs      map[string]json.RawMessage `json:"archs"`
+		Archs        map[string]json.RawMessage `json:"archs"`
+		Drivers      map[string]json.RawMessage `json:"drivers"`
+		Integrations map[string]json.RawMessage `json:"integrations"`
 	}
 	json.Unmarshal(data, &rawReg)
+
+	// Load categories
+	var allowedCategories []string
+	catData, err := os.ReadFile("driver_categories.json")
+	if err == nil {
+		json.Unmarshal(catData, &allowedCategories)
+	} else {
+		log.Fatalf("FATAL: Could not read driver_categories.json")
+	}
+	categoryMap := make(map[string]bool)
+	for _, c := range allowedCategories {
+		categoryMap[c] = true
+	}
 
 	// Walk toolchains directory
 	tcDir := "toolchains"
@@ -170,31 +205,6 @@ func main() {
 		newToolchains[tcName] = manifest
 	}
 
-	// Walk vendors directory
-	vendorDir := "vendor"
-	vEntries, err := os.ReadDir(vendorDir)
-	if err == nil {
-		for _, entry := range vEntries {
-			if !entry.IsDir() {
-				continue
-			}
-			vName := entry.Name()
-			vPath := filepath.Join(vendorDir, vName, "vendor_manifest.json")
-			mdata, err := os.ReadFile(vPath)
-			if err != nil {
-				continue
-			}
-			var manifest VendorEntry
-			if err := json.Unmarshal(mdata, &manifest); err != nil {
-				log.Fatalf("FATAL: Error parsing %s: %v", vPath, err)
-			}
-			if manifest.Name == "" || manifest.Version == "" {
-				log.Fatalf("FATAL: Vendor manifest '%s' is missing 'name' or 'version'", vPath)
-			}
-			manifest.Path = filepath.ToSlash(filepath.Join(vendorDir, vName))
-			newVendors[vName] = manifest
-		}
-	}
 
 	// Walk archs directory
 	archDir := "arch"
@@ -221,6 +231,39 @@ func main() {
 			newArchs[aName] = manifest
 		}
 	}
+
+	// Walk drivers directory recursively
+	driversDir := "drivers"
+	filepath.Walk(driversDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if !info.IsDir() {
+			if info.Name() == "driver_manifest.json" {
+				mdata, err := os.ReadFile(path)
+				if err != nil {
+					return nil
+				}
+				var manifest DriverEntry
+				if err := json.Unmarshal(mdata, &manifest); err != nil {
+					log.Fatalf("FATAL: Error parsing %s: %v", path, err)
+				}
+				if manifest.Name == "" || manifest.Version == "" {
+					log.Fatalf("FATAL: Driver manifest '%s' is missing 'name' or 'version'", path)
+				}
+				manifest.Path = filepath.ToSlash(filepath.Dir(path))
+				
+				category := filepath.Base(filepath.Dir(manifest.Path))
+				if !categoryMap[category] {
+					log.Fatalf("FATAL: Driver '%s' uses illegal category '%s'. Must be registered in driver_categories.json!", manifest.Name, category)
+				}
+				manifest.Category = category
+
+				newDrivers[manifest.Name] = manifest
+			}
+		}
+		return nil
+	})
 
 	// Walk integrations directory
 	integrationDir := "integrations"
@@ -295,14 +338,44 @@ func main() {
 
 	// Validate chips
 	for chipKey, c := range newChips {
-		if c.Name == "" || c.Vendor == "" || c.Arch == "" || c.CompilerPrefix == "" {
+		if c.Name == "" || c.Arch == "" || c.CompilerPrefix == "" {
 			log.Fatalf("FATAL: Chip '%s' is missing required fields.", chipKey)
 		}
 
-		// Verify that vendor directory actually exists in the codebase
-		vendorPath := filepath.Join("vendor", c.Vendor)
-		if _, err := os.Stat(vendorPath); os.IsNotExist(err) {
-			log.Fatalf("FATAL: Chip '%s' declares vendor '%s', but directory '%s' does not exist in registry!", chipKey, c.Vendor, vendorPath)
+		// Validate sources (Flat BOM)
+		if c.Sources == nil {
+			log.Fatalf("FATAL: Chip '%s' is missing the 'sources' block (Flat BOM requirement)!", chipKey)
+		}
+
+		chipDir := filepath.Join("chips", chipKey)
+		validateSourceFile := func(name, path string) {
+			if path == "" {
+				log.Fatalf("FATAL: Chip '%s' sources block is missing '%s'!", chipKey, name)
+			}
+			// Paths that do not start with a specific registry root folder are assumed to be chip-local
+			fullPath := filepath.Join(chipDir, path)
+			if strings.HasPrefix(path, "drivers/") || strings.HasPrefix(path, "arch/") {
+				fullPath = path
+			}
+			if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+				log.Fatalf("FATAL: Chip '%s' declares source '%s' at '%s', but file does not exist!", chipKey, name, fullPath)
+			}
+		}
+
+		validateSourceFile("startup", c.Sources.Startup)
+		validateSourceFile("platform", c.Sources.Platform)
+		validateSourceFile("config", c.Sources.Config)
+		validateSourceFile("linker", c.Sources.Linker)
+		validateSourceFile("hardware", c.Sources.Hardware)
+
+		for i, drv := range c.Sources.Drivers {
+			if _, err := os.Stat(drv); os.IsNotExist(err) {
+				log.Fatalf("FATAL: Chip '%s' declares driver[%d] '%s', but file does not exist in registry!", chipKey, i, drv)
+			}
+		}
+
+		for i, ext := range c.Sources.Extra {
+			validateSourceFile(fmt.Sprintf("extra[%d]", i), ext)
 		}
 
 		// Verify that arch directory actually exists in the codebase
@@ -317,11 +390,39 @@ func main() {
 			log.Fatalf("FATAL: Chip '%s' references compiler_prefix '%s' (toolchain '%s'), but it is NOT defined in any toolchain_manifest.json!", chipKey, c.CompilerPrefix, tcName)
 		}
 
+		if c.DriverConfigs != nil {
+			for drvName, drvConf := range c.DriverConfigs {
+				drvManifest, exists := newDrivers[drvName]
+				if !exists {
+					log.Fatalf("FATAL: Chip '%s' configures driver '%s', but this driver does not exist!", chipKey, drvName)
+				}
+				if drvManifest.ConfigSchema == nil {
+					log.Fatalf("FATAL: Chip '%s' configures driver '%s', but driver has no config_schema!", chipKey, drvName)
+				}
+				for key, val := range drvConf {
+					schemaField, hasField := drvManifest.ConfigSchema[key]
+					if !hasField {
+						log.Fatalf("FATAL: Chip '%s' sets config '%s' for driver '%s', but it is not in the config_schema!", chipKey, key, drvName)
+					}
+					if schemaField.Type == "int" {
+						if _, ok := val.(float64); !ok {
+							log.Fatalf("FATAL: Chip '%s' driver '%s' config '%s' must be an integer!", chipKey, drvName, key)
+						}
+					} else if schemaField.Type == "bool" {
+						if _, ok := val.(bool); !ok {
+							log.Fatalf("FATAL: Chip '%s' driver '%s' config '%s' must be a boolean!", chipKey, drvName, key)
+						}
+					} else if schemaField.Type == "string" || schemaField.Type == "hex" {
+						if _, ok := val.(string); !ok {
+							log.Fatalf("FATAL: Chip '%s' driver '%s' config '%s' must be a string/hex!", chipKey, drvName, key)
+						}
+					}
+				}
+			}
+		}
+
 		// Check Matrix Verification Status
 
-		if _, vExists := newVendors[c.Vendor]; !vExists {
-			log.Fatalf("FATAL: Chip '%s' uses vendor '%s', but no valid vendor_manifest.json was loaded for it!", chipKey, c.Vendor)
-		}
 		if _, aExists := newArchs[c.Arch]; !aExists {
 			log.Fatalf("FATAL: Chip '%s' uses arch '%s', but no valid arch_manifest.json was loaded for it!", chipKey, c.Arch)
 		}
@@ -334,12 +435,21 @@ func main() {
 		if raw, ok := rawReg.Toolchains[tcName]; ok {
 			h.Write(raw)
 		}
-		if raw, ok := rawReg.Vendors[c.Vendor]; ok {
-			h.Write(raw)
-		}
 		if raw, ok := rawReg.Archs[c.Arch]; ok {
 			h.Write(raw)
 		}
+		
+		for _, drvPath := range c.Sources.Drivers {
+			drvName := filepath.Base(filepath.Dir(drvPath))
+			if raw, ok := rawReg.Drivers[drvName]; ok {
+				h.Write(raw)
+			}
+		}
+		
+		for _, raw := range rawReg.Integrations {
+			h.Write(raw)
+		}
+
 		stateHash := hex.EncodeToString(h.Sum(nil))
 
 		c.Verified = false
@@ -366,8 +476,8 @@ func main() {
 
 	registry.Chips = newChips
 	registry.Toolchains = newToolchains
-	registry.Vendors = newVendors
 	registry.Archs = newArchs
+	registry.Drivers = newDrivers
 	registry.Integrations = newIntegrations
 
 	// Read Releases Index
@@ -384,7 +494,6 @@ func main() {
 	// Has anything changed?
 	changed := !reflect.DeepEqual(oldChips, newChips) || 
 	           !reflect.DeepEqual(oldToolchains, newToolchains) || 
-			   !reflect.DeepEqual(oldVendors, newVendors) || 
 			   !reflect.DeepEqual(oldArchs, newArchs) ||
 			   !reflect.DeepEqual(oldIntegrations, newIntegrations)
 

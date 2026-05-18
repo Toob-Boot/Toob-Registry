@@ -23,8 +23,6 @@ func GenerateComboID(prefix, chip, chipVersion, tcVer, cli, core, compiler strin
 type Dependencies struct {
 	Toolchain        string `json:"toolchain"`
 	ToolchainVersion string `json:"toolchain_version"`
-	Vendor           string `json:"vendor"`
-	VendorVersion    string `json:"vendor_version"`
 	Arch             string `json:"arch"`
 	ArchVersion      string `json:"arch_version"`
 }
@@ -222,19 +220,18 @@ func main() {
 	var reg struct {
 		Chips map[string]struct {
 			Version        string `json:"version"`
-			Vendor         string `json:"vendor"`
 			Arch           string `json:"arch"`
 			CompilerPrefix string `json:"compiler_prefix"`
 		} `json:"chips"`
 		Toolchains map[string]struct {
 			Version string `json:"version"`
 		} `json:"toolchains"`
-		Vendors map[string]struct {
-			Version string `json:"version"`
-		} `json:"vendors"`
 		Archs map[string]struct {
 			Version string `json:"version"`
 		} `json:"archs"`
+		Drivers map[string]struct {
+			Version string `json:"version"`
+		} `json:"drivers"`
 	}
 	if err := json.Unmarshal(regData, &reg); err != nil {
 		log.Fatalf("FATAL: Error parsing registry: %v", err)
@@ -314,12 +311,9 @@ func main() {
 			if len(tcName) > 0 && tcName[len(tcName)-1] == '-' {
 				tcName = tcName[:len(tcName)-1]
 			}
-			tcVer, vVer, aVer := "unknown", "unknown", "unknown"
+			tcVer, aVer := "unknown", "unknown"
 			if tc, ok := reg.Toolchains[tcName]; ok {
 				tcVer = tc.Version
-			}
-			if v, ok := reg.Vendors[chipMeta.Vendor]; ok {
-				vVer = v.Version
 			}
 			if a, ok := reg.Archs[chipMeta.Arch]; ok {
 				aVer = a.Version
@@ -328,8 +322,6 @@ func main() {
 			chipMetaDeps = Dependencies{
 				Toolchain:        tcName,
 				ToolchainVersion: tcVer,
-				Vendor:           chipMeta.Vendor,
-				VendorVersion:    vVer,
 				Arch:             chipMeta.Arch,
 				ArchVersion:      aVer,
 			}

@@ -20,8 +20,8 @@
  */
 
 #include "chip_config.h"
+#include "generated_boot_config.h"
 #include "esp_common.h"
-
 
 #include <stdint.h>
 
@@ -45,7 +45,7 @@
 #define UART_MEM_CLK_EN (1U << 20)
 
 /* TX FIFO capacity — chip-specific (from chip_config.h) */
-#define UART_TX_FIFO_SIZE CHIP_UART_TX_FIFO_SIZE
+#define UART_TX_FIFO_SIZE CHIP_REG_UART_TX_FIFO_SIZE
 
 static uint32_t s_uart_base;
 
@@ -75,7 +75,7 @@ static void uart_sync_regs(void) {
 }
 
 boot_status_t esp_uart_init(uint32_t baudrate) {
-  s_uart_base = CHIP_UART0_BASE;
+  s_uart_base = CHIP_REG_UART0_BASE;
 
   if (baudrate == 0U) {
     return BOOT_ERR_INVALID_ARG;
@@ -94,8 +94,8 @@ boot_status_t esp_uart_init(uint32_t baudrate) {
   uart_sync_regs();
 
   /* Set baudrate: divider = SCLK / baudrate */
-  uint32_t divider = CHIP_UART_SCLK_FREQ / baudrate;
-  uint32_t frag = ((CHIP_UART_SCLK_FREQ % baudrate) * 16U) / baudrate;
+  uint32_t divider = CHIP_REG_UART_SCLK_FREQ / baudrate;
+  uint32_t frag = ((CHIP_REG_UART_SCLK_FREQ % baudrate) * 16U) / baudrate;
   uart_reg_write(UART_CLKDIV_SYNC_OFF,
                  (divider & 0xFFFU) | ((frag & 0xFU) << 20));
   uart_sync_regs();
@@ -153,7 +153,7 @@ boot_status_t esp_uart_getchar(uint8_t *out, uint32_t timeout_ms) {
    * Simple spin-based timeout using CHIP_CPU_FREQ_HZ.
    * For boot-time serial rescue, precision is not critical.
    */
-  uint32_t iterations = timeout_ms * (CHIP_CPU_FREQ_HZ / 1000U);
+  uint32_t iterations = timeout_ms * (CHIP_REG_CPU_FREQ_HZ / 1000U);
   if (iterations == 0U) {
     iterations = 1U;
   }

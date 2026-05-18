@@ -1,0 +1,6 @@
+{
+  "name": "esp_rwdt_with_swd",
+  "author": "toob-core-team",
+  "version": "1.0.0",
+  "description": "ESP32 Regular Watchdog Timer (TIMG) with SWD sterilization"
+}

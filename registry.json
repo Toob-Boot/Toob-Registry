@@ -1,16 +1,36 @@
 {
     "format_version": 1,
-    "registry_version": "v1.0.10",
+    "registry_version": "v1.0.12",
     "chips": {
         "esp32c6": {
             "name": "esp32c6",
-            "vendor": "esp",
             "arch": "riscv32",
             "compiler_prefix": "riscv32-esp-elf-",
             "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)",
             "version": "1.1.0",
             "path": "chips/esp32c6",
-            "verified": false
+            "verified": false,
+            "sources": {
+                "startup": "startup.c",
+                "platform": "chip_platform.c",
+                "config": "chip_config.h",
+                "linker": "esp32c6_stage1.ld",
+                "hardware": "hardware.json",
+                "drivers": [
+                    "drivers/uart/esp_uart_v1/console.c",
+                    "drivers/flash/esp_rom_spi/flash.c",
+                    "drivers/wdt/esp_rwdt_with_swd/wdt.c",
+                    "drivers/rtc/esp_rtc_mem/confirm.c",
+                    "drivers/clock/esp_systimer/reset_reason.c"
+                ],
+                "extra": [
+                    "mock_efuse.c"
+                ]
+            },
+            "includes": [
+                "soc/esp/include",
+                "arch/riscv32/include"
+            ]
         }
     },
     "toolchains": {
@@ -32,20 +52,49 @@
             }
         }
     },
-    "vendors": {
-        "esp": {
-            "name": "Espressif",
-            "path": "vendor/esp",
-            "version": "1.0.1",
-            "description": "Hardware Abstraction Layer for Espressif Devices"
-        }
-    },
     "archs": {
         "riscv32": {
             "name": "riscv32",
             "path": "arch/riscv32",
             "version": "1.0.0",
             "description": "RISC-V 32-bit Architecture Support"
+        }
+    },
+    "drivers": {
+        "esp_rom_spi": {
+            "name": "esp_rom_spi",
+            "path": "drivers/flash/esp_rom_spi",
+            "version": "1.0.0",
+            "description": "ESP32 SPI Flash Driver via ROM pointers",
+            "category": "flash"
+        },
+        "esp_rtc_mem": {
+            "name": "esp_rtc_mem",
+            "path": "drivers/rtc/esp_rtc_mem",
+            "version": "1.0.0",
+            "description": "ESP32 RTC LP_RAM Confirm Nonce Storage",
+            "category": "rtc"
+        },
+        "esp_rwdt_with_swd": {
+            "name": "esp_rwdt_with_swd",
+            "path": "drivers/wdt/esp_rwdt_with_swd",
+            "version": "1.0.0",
+            "description": "ESP32 Regular Watchdog Timer (TIMG) with SWD sterilization",
+            "category": "wdt"
+        },
+        "esp_systimer": {
+            "name": "esp_systimer",
+            "path": "drivers/clock/esp_systimer",
+            "version": "1.0.0",
+            "description": "ESP32 System Reset Reason via RTC_CNTL",
+            "category": "clock"
+        },
+        "esp_uart_v1": {
+            "name": "esp_uart_v1",
+            "path": "drivers/uart/esp_uart_v1",
+            "version": "1.0.0",
+            "description": "ESP32 UART0 Console Driver",
+            "category": "uart"
         }
     },
     "integrations": {

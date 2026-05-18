@@ -21,6 +21,7 @@
 #include "boot_hal.h"
 #include "boot_panic.h"
 #include "chip_config.h"
+#include "generated_boot_config.h"
 
 #include "arch_riscv.h"
 #include "esp_common.h"
@@ -76,7 +77,7 @@ static const wdt_hal_t esp32c6_wdt_hal = {
  * ======================================================================== */
 static boot_status_t esp32c6_clock_init(void)
 {
-    arch_riscv_timer_init(CHIP_SYSTIMER_BASE, CHIP_CPU_FREQ_HZ);
+    arch_riscv_timer_init(CHIP_REG_SYSTIMER_BASE, CHIP_REG_CPU_FREQ_HZ);
     return BOOT_OK;
 }
 
@@ -118,10 +119,9 @@ static const console_hal_t esp32c6_console_hal = {
  *       Real eFuse access requires EFUSE controller register mapping.
  * ======================================================================== */
 
-/* ESP32-C6 Hardware RNG: RNG_DATA_REG at 0x60026000 (TRM Section 26.3).
+/* ESP32 Hardware RNG. Address injected via CHIP_REG_RNG_DATA_REG.
  * Reading this 32-bit register returns entropy-mixed random data.
- * The ADC SAR noise source is always active on C6 during normal boot. */
-#define REG_RNG_DATA  0x60026000U
+ * The ADC SAR noise source is always active on ESP32 during normal boot. */
 
 static boot_status_t esp32c6_hw_random(uint8_t *buf, size_t len)
 {
@@ -131,7 +131,7 @@ static boot_status_t esp32c6_hw_random(uint8_t *buf, size_t len)
 
     size_t pos = 0;
     while (pos < len) {
-        uint32_t word = REG_READ(REG_RNG_DATA);
+        uint32_t word = REG_READ(CHIP_REG_RNG_DATA_REG);
         size_t remaining = len - pos;
         size_t chunk = (remaining >= 4U) ? 4U : remaining;
         for (size_t i = 0; i < chunk; i++) {
@@ -142,12 +142,11 @@ static boot_status_t esp32c6_hw_random(uint8_t *buf, size_t len)
     return BOOT_OK;
 }
 
-/* EFUSE Controller Base Address for ESP32-C6 */
-#define ESP32C6_EFUSE_BASE 0x600B0800U
+/* EFUSE Controller Base Address for ESP32. Address injected via CHIP_REG_EFUSE_BASE. */
 /* Block 4 is commonly used for secure boot keys (KEY0) */
-#define EFUSE_BLK_KEY0_DATA0_REG (ESP32C6_EFUSE_BASE + 0x0A4U)
+#define EFUSE_BLK_KEY0_DATA0_REG (CHIP_REG_EFUSE_BASE + 0x0A4U)
 /* SYS_DATA_PART2 is often used for custom counters (Block 2) */
-#define EFUSE_SYS_DATA_PART2_REG (ESP32C6_EFUSE_BASE + 0x04CU)
+#define EFUSE_SYS_DATA_PART2_REG (CHIP_REG_EFUSE_BASE + 0x04CU)
 
 static boot_status_t esp32c6_read_pubkey(uint8_t *key, size_t key_len, uint8_t key_index)
 {
@@ -269,7 +268,11 @@ const boot_platform_t *boot_platform_init(void)
 
     /* ⑥ Console: optional — failure is non-fatal */
     if (platform.console != NULL) {
+#ifdef TOOB_DRIVER_UART_BAUDRATE
+        (void)platform.console->init(TOOB_DRIVER_UART_BAUDRATE);
+#else
         (void)platform.console->init(115200U);
+#endif
     }
 
     return &platform;

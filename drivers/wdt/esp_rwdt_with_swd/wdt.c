@@ -22,25 +22,25 @@
 
 #include <stdint.h>
 
-/* TIMG0 WDT register aliases (absolute addresses from chip_config.h) */
-#define TIMG0_WDTCONFIG0     REG_TIMG0_WDT_CONFIG0
-#define TIMG0_WDTCONFIG1     (REG_TIMG0_WDT_CONFIG0 + 0x04U)
-#define TIMG0_WDTCONFIG2     (REG_TIMG0_WDT_CONFIG0 + 0x08U)
-#define TIMG0_WDTCONFIG3     (REG_TIMG0_WDT_CONFIG0 + 0x0CU)
-#define TIMG0_WDTFEED        REG_TIMG0_WDT_FEED
-#define TIMG0_WDTWPROTECT    REG_TIMG0_WDT_WPROTECT
+/* TIMG0 WDT register aliases */
+#define TIMG0_WDTCONFIG0     (CHIP_REG_TIMG0_WDT_BASE + 0x48U)
+#define TIMG0_WDTCONFIG1     (CHIP_REG_TIMG0_WDT_BASE + 0x4CU)
+#define TIMG0_WDTCONFIG2     (CHIP_REG_TIMG0_WDT_BASE + 0x50U)
+#define TIMG0_WDTCONFIG3     (CHIP_REG_TIMG0_WDT_BASE + 0x54U)
+#define TIMG0_WDTFEED        (CHIP_REG_TIMG0_WDT_BASE + 0x60U)
+#define TIMG0_WDTWPROTECT    (CHIP_REG_TIMG0_WDT_BASE + 0x64U)
 
-/* TIMG1 WDT (same layout, different base — addresses from chip_config.h) */
-#define TIMG1_WDTCONFIG0     REG_TIMG1_WDT_CONFIG0
-#define TIMG1_WDTWPROTECT    REG_TIMG1_WDT_WPROTECT
+/* TIMG1 WDT */
+#define TIMG1_WDTCONFIG0     (CHIP_REG_TIMG1_WDT_BASE + 0x48U)
+#define TIMG1_WDTWPROTECT    (CHIP_REG_TIMG1_WDT_BASE + 0x64U)
 
 /* LP_WDT */
-#define LPWDT_CONFIG0        REG_LP_WDT_CONFIG0
-#define LPWDT_WPROTECT       REG_LP_WDT_WPROTECT
+#define LPWDT_CONFIG0        (CHIP_REG_LP_WDT_BASE + 0x00U)
+#define LPWDT_WPROTECT       (CHIP_REG_LP_WDT_BASE + 0x18U)
 
 /* SWD (Super Watchdog) */
-#define SWD_CONFIG           REG_LP_WDT_SWD_CONFIG
-#define SWD_WPROTECT         REG_LP_WDT_SWD_WPROTECT
+#define SWD_CONFIG           (CHIP_REG_LP_WDT_BASE + 0x1CU)
+#define SWD_WPROTECT         (CHIP_REG_LP_WDT_BASE + 0x20U)
 
 /* Config0 bit fields for TIMG RWDT */
 #define WDT_EN_BIT           (1U << 31)
@@ -55,11 +55,11 @@ static uint32_t s_saved_prescaler;
  * @brief Disable a single WDT peripheral (Unlock → Config=0 pattern).
  *
  * All ESP WDTs are write-protected. The unlock key value is chip-specific
- * and provided via VAL_WDT_UNLOCK in chip_config.h.
+ * and provided via CHIP_REG_VAL_WDT_UNLOCK in chip_config.h.
  */
 static void wdt_disable(uint32_t config_addr, uint32_t wprotect_addr)
 {
-    REG_WRITE(wprotect_addr, VAL_WDT_UNLOCK);
+    REG_WRITE(wprotect_addr, CHIP_REG_VAL_WDT_UNLOCK);
     REG_WRITE(config_addr, 0U);
     REG_WRITE(wprotect_addr, 0U);
 }
@@ -72,7 +72,7 @@ static void wdt_disable(uint32_t config_addr, uint32_t wprotect_addr)
  */
 static void swd_disable(void)
 {
-    REG_WRITE(SWD_WPROTECT, VAL_WDT_UNLOCK);
+    REG_WRITE(SWD_WPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
     REG_SET_BIT(SWD_CONFIG, SWD_AUTO_FEED_BIT);
     REG_WRITE(SWD_WPROTECT, 0U);
 }
@@ -86,7 +86,7 @@ boot_status_t esp_rwdt_init(uint32_t timeout_ms)
     wdt_disable(TIMG1_WDTCONFIG0, TIMG1_WDTWPROTECT);
     wdt_disable(LPWDT_CONFIG0, LPWDT_WPROTECT);
 
-#if CHIP_HAS_SWD
+#if CHIP_REG_HAS_SWD
     swd_disable();
 #endif
 
@@ -108,7 +108,7 @@ boot_status_t esp_rwdt_init(uint32_t timeout_ms)
     uint32_t prescaler = 40000U;
     s_saved_prescaler = prescaler;
 
-    REG_WRITE(TIMG0_WDTWPROTECT, VAL_WDT_UNLOCK);
+    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
 
     /* CONFIG1: prescaler value (bits 15:0) */
     REG_WRITE(TIMG0_WDTCONFIG1, prescaler << 16);
@@ -140,7 +140,7 @@ void esp_rwdt_deinit(void)
 
 void esp_rwdt_kick(void)
 {
-    REG_WRITE(TIMG0_WDTWPROTECT, VAL_WDT_UNLOCK);
+    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
     REG_WRITE(TIMG0_WDTFEED, 1U);
     REG_WRITE(TIMG0_WDTWPROTECT, 0U);
 }
@@ -154,7 +154,7 @@ void esp_rwdt_kick(void)
  */
 void esp_rwdt_suspend(void)
 {
-    REG_WRITE(TIMG0_WDTWPROTECT, VAL_WDT_UNLOCK);
+    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
     REG_WRITE(TIMG0_WDTCONFIG1, 0xFFFFU << 16);
     REG_WRITE(TIMG0_WDTFEED, 1U);
     REG_WRITE(TIMG0_WDTWPROTECT, 0U);
@@ -162,7 +162,7 @@ void esp_rwdt_suspend(void)
 
 void esp_rwdt_resume(void)
 {
-    REG_WRITE(TIMG0_WDTWPROTECT, VAL_WDT_UNLOCK);
+    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
     REG_WRITE(TIMG0_WDTCONFIG1, s_saved_prescaler << 16);
     REG_WRITE(TIMG0_WDTFEED, 1U);
     REG_WRITE(TIMG0_WDTWPROTECT, 0U);

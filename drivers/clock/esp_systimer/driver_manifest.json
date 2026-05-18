@@ -1,0 +1,6 @@
+{
+  "name": "esp_systimer",
+  "author": "toob-core-team",
+  "version": "1.0.0",
+  "description": "ESP32 System Reset Reason via RTC_CNTL"
+}

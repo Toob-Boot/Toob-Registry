@@ -1,0 +1,6 @@
+{
+  "name": "esp_rtc_mem",
+  "author": "toob-core-team",
+  "version": "1.0.0",
+  "description": "ESP32 RTC LP_RAM Confirm Nonce Storage"
+}

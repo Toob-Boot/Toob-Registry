@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-17T22:59:31Z",
+    "generated_at": "2026-05-18T02:08:21Z",
     "main_branch": {
         "chips": [
             {
@@ -15,11 +15,31 @@
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/arch/riscv32"
             }
         ],
-        "vendors": [
+        "drivers": [
             {
-                "name": "esp",
-                "version": "1.0.1",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/vendor/esp"
+                "name": "esp_rom_spi",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
+            },
+            {
+                "name": "esp_rtc_mem",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/rtc/esp_rtc_mem"
+            },
+            {
+                "name": "esp_rwdt_with_swd",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/wdt/esp_rwdt_with_swd"
+            },
+            {
+                "name": "esp_systimer",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/clock/esp_systimer"
+            },
+            {
+                "name": "esp_uart_v1",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/uart/esp_uart_v1"
             }
         ],
         "toolchains": [
@@ -67,13 +87,7 @@
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/arch/riscv32"
                         }
                     ],
-                    "vendors": [
-                        {
-                            "name": "esp",
-                            "version": "1.0.1",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/vendor/esp"
-                        }
-                    ],
+                    "drivers": null,
                     "toolchains": [
                         {
                             "name": "riscv32-esp-elf",
@@ -102,13 +116,7 @@
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/arch/riscv32"
                         }
                     ],
-                    "vendors": [
-                        {
-                            "name": "esp",
-                            "version": "1.0.1",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/vendor/esp"
-                        }
-                    ],
+                    "drivers": null,
                     "toolchains": [
                         {
                             "name": "riscv32-esp-elf",

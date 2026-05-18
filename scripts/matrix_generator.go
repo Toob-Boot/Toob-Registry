@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,9 +19,18 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+type ChipSources struct {
+	Startup  string   `json:"startup"`
+	Platform string   `json:"platform"`
+	Config   string   `json:"config"`
+	Linker   string   `json:"linker"`
+	Hardware string   `json:"hardware"`
+	Drivers  []string `json:"drivers,omitempty"`
+	Extra    []string `json:"extra,omitempty"`
+}
+
 type ChipManifest struct {
 	Name           string `json:"name"`
-	Vendor         string `json:"vendor"`
 	Arch           string `json:"arch"`
 	CompilerPrefix string `json:"compiler_prefix"`
 	Description    string `json:"description"`
@@ -28,6 +38,7 @@ type ChipManifest struct {
 	Path           string `json:"path,omitempty"`
 	MinCoreSDK     string `json:"min_core_sdk,omitempty"`
 	MinCompiler    string `json:"min_compiler,omitempty"`
+	Sources        *ChipSources `json:"sources,omitempty"`
 }
 
 type ToolchainEntry struct {
@@ -36,11 +47,6 @@ type ToolchainEntry struct {
 	Sha256  map[string]string `json:"sha256"`
 }
 
-type VendorEntry struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-}
 
 type ArchEntry struct {
 	Name        string `json:"name"`
@@ -58,15 +64,12 @@ type Registry struct {
 	Ecosystem  *EcosystemIndex           `json:"ecosystem,omitempty"`
 	Chips      map[string]ChipManifest   `json:"chips"`
 	Toolchains map[string]ToolchainEntry `json:"toolchains"`
-	Vendors    map[string]VendorEntry    `json:"vendors"`
 	Archs      map[string]ArchEntry      `json:"archs"`
 }
 
 type Dependencies struct {
 	Toolchain        string `json:"toolchain"`
 	ToolchainVersion string `json:"toolchain_version"`
-	Vendor           string `json:"vendor"`
-	VendorVersion    string `json:"vendor_version"`
 	Arch             string `json:"arch"`
 	ArchVersion      string `json:"arch_version"`
 }
@@ -331,8 +334,8 @@ func main() {
 	var rawReg struct {
 		Chips      map[string]json.RawMessage `json:"chips"`
 		Toolchains map[string]json.RawMessage `json:"toolchains"`
-		Vendors    map[string]json.RawMessage `json:"vendors"`
 		Archs      map[string]json.RawMessage `json:"archs"`
+		Drivers    map[string]json.RawMessage `json:"drivers"`
 	}
 	json.Unmarshal(regData, &rawReg)
 
@@ -366,12 +369,20 @@ func main() {
 		if raw, ok := rawReg.Toolchains[tcName]; ok {
 			h.Write(raw)
 		}
-		if raw, ok := rawReg.Vendors[chip.Vendor]; ok {
-			h.Write(raw)
-		}
 		if raw, ok := rawReg.Archs[chip.Arch]; ok {
 			h.Write(raw)
 		}
+		
+		// Hash the drivers
+		if chip.Sources != nil {
+			for _, drvPath := range chip.Sources.Drivers {
+				drvName := filepath.Base(filepath.Dir(drvPath))
+				if raw, ok := rawReg.Drivers[drvName]; ok {
+					h.Write(raw)
+				}
+			}
+		}
+
 		hardwareHash := hex.EncodeToString(h.Sum(nil))
 		log.Printf("[MatrixGen] Hardware Hash for %s: %s", chipKey, hardwareHash)
 

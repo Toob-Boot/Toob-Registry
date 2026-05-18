@@ -1,0 +1,6 @@
+{
+  "name": "esp_uart_v1",
+  "author": "toob-core-team",
+  "version": "1.0.0",
+  "description": "ESP32 UART0 Console Driver"
+}

@@ -17,8 +17,8 @@ import (
 ================================================================================
   SEMVER HARDWARE GUIDELINES (FOR LLMs & DEVELOPERS)
 ================================================================================
-When updating code in vendor/, arch/, or toolchains/, you MUST manually bump the
-version in the respective manifest (e.g. vendor_manifest.json).
+When updating code in drivers/, arch/, or toolchains/, you MUST manually bump the
+version in the respective manifest (e.g. arch_manifest.json), or rely on the auto-bump.
 
 Use the following semantic versioning rules for HARDWARE definitions:
 
@@ -48,11 +48,22 @@ const (
 	BumpMajor = 3
 )
 
+type ChipSources struct {
+	Startup  string   `json:"startup"`
+	Platform string   `json:"platform"`
+	Config   string   `json:"config"`
+	Linker   string   `json:"linker"`
+	Hardware string   `json:"hardware"`
+	Drivers  []string `json:"drivers,omitempty"`
+	Extra    []string `json:"extra,omitempty"`
+}
+
 type ChipManifest struct {
-	Vendor         string `json:"vendor"`
-	Arch           string `json:"arch"`
-	CompilerPrefix string `json:"compiler_prefix"`
-	Version        string `json:"version"`
+	Arch           string       `json:"arch"`
+	CompilerPrefix string       `json:"compiler_prefix"`
+	Version        string       `json:"version"`
+	Sources        *ChipSources `json:"sources,omitempty"`
+	Includes       []string     `json:"includes,omitempty"`
 }
 
 // readFileFromGit reads a raw file from a specific git commit
@@ -260,16 +271,19 @@ func main() {
 	dependencyBumps := make(map[string]int)
 
 	// Helper to check and record a dependency's bump
-	checkDep := func(category, name string) {
-		path := fmt.Sprintf("%s/%s/%s_manifest.json", category, name, strings.TrimSuffix(category, "s"))
-		folder := fmt.Sprintf("%s/%s", category, name)
-
-		if category == "vendor" {
-			path = fmt.Sprintf("vendor/%s/vendor_manifest.json", name)
-		} else if category == "arch" {
-			path = fmt.Sprintf("arch/%s/arch_manifest.json", name)
-		} else if category == "toolchains" {
-			path = fmt.Sprintf("toolchains/%s/toolchain_manifest.json", name)
+	checkDep := func(category, name string, customPath string) {
+		var path, folder string
+		if customPath != "" {
+			path = fmt.Sprintf("%s/%s_manifest.json", customPath, strings.TrimSuffix(category, "s"))
+			folder = customPath
+		} else {
+			path = fmt.Sprintf("%s/%s/%s_manifest.json", category, name, strings.TrimSuffix(category, "s"))
+			folder = fmt.Sprintf("%s/%s", category, name)
+			if category == "arch" {
+				path = fmt.Sprintf("arch/%s/arch_manifest.json", name)
+			} else if category == "toolchains" {
+				path = fmt.Sprintf("toolchains/%s/toolchain_manifest.json", name)
+			}
 		}
 
 		oldVer, _ := readVersionFromGit(beforeSha, path)
@@ -324,24 +338,24 @@ func main() {
 	var reg struct {
 		Chips        map[string]ChipManifest `json:"chips"`
 		Toolchains   map[string]interface{}  `json:"toolchains"`
-		Vendors      map[string]interface{}  `json:"vendors"`
 		Archs        map[string]interface{}  `json:"archs"`
+		Drivers      map[string]struct{ Path string }  `json:"drivers"`
 		Integrations map[string]interface{}  `json:"integrations"`
 	}
 	json.Unmarshal(regData, &reg)
 
 	// Check all dependencies
-	for v := range reg.Vendors {
-		checkDep("vendor", v)
-	}
 	for a := range reg.Archs {
-		checkDep("arch", a)
+		checkDep("arch", a, "")
 	}
 	for tc := range reg.Toolchains {
-		checkDep("toolchains", tc)
+		checkDep("toolchains", tc, "")
+	}
+	for d, info := range reg.Drivers {
+		checkDep("drivers", d, info.Path)
 	}
 	for i := range reg.Integrations {
-		checkDep("integrations", i)
+		checkDep("integrations", i, "")
 	}
 
 	// Gap 6: Read chips directly from the directory to detect completely new chips
@@ -352,6 +366,17 @@ func main() {
 		log.Fatalf("FATAL: Failed to read %s directory", chipsDir)
 	}
 
+	// Get all globally changed files to evaluate Flat BOM dependencies
+	changedFiles := make(map[string]bool)
+	diffCmd := exec.Command("git", "diff", "--name-only", fmt.Sprintf("%s..%s", beforeSha, currentSha))
+	if diffOut, err := diffCmd.Output(); err == nil {
+		for _, line := range strings.Split(string(diffOut), "\n") {
+			if strings.TrimSpace(line) != "" {
+				changedFiles[filepath.ToSlash(strings.TrimSpace(line))] = true
+			}
+		}
+	}
+
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			continue
@@ -359,15 +384,14 @@ func main() {
 		chipKey := entry.Name()
 		
 		// Fallback values in case it's a completely new chip without registry entry yet
-		vendor, arch, compilerPrefix := "", "", ""
+		arch, compilerPrefix := "", ""
 		cPath := fmt.Sprintf("chips/%s/chip_manifest.json", chipKey)
 		
 		// Read current local manifest to get its dependencies
+		var localManifest ChipManifest
 		localData, err := os.ReadFile(cPath)
 		if err == nil {
-			var localManifest ChipManifest
 			if json.Unmarshal(localData, &localManifest) == nil {
-				vendor = localManifest.Vendor
 				arch = localManifest.Arch
 				compilerPrefix = localManifest.CompilerPrefix
 			}
@@ -379,7 +403,6 @@ func main() {
 		}
 
 		folder := fmt.Sprintf("chips/%s", chipKey)
-		vPath := fmt.Sprintf("vendor/%s/vendor_manifest.json", vendor)
 		aPath := fmt.Sprintf("arch/%s/arch_manifest.json", arch)
 		tcPath := fmt.Sprintf("toolchains/%s/toolchain_manifest.json", tcName)
 
@@ -423,14 +446,42 @@ func main() {
 
 		// Calculate max inherited bump
 		maxBump := ownBump
-		if b := dependencyBumps[vPath]; b > maxBump {
-			maxBump = b
-		}
+		
+		// 1. Check manifests
 		if b := dependencyBumps[aPath]; b > maxBump {
 			maxBump = b
 		}
 		if b := dependencyBumps[tcPath]; b > maxBump {
 			maxBump = b
+		}
+
+		// 2. Check Flat BOM files directly via git diff
+		bomBump := BumpNone
+		if localManifest.Sources != nil {
+			// Helper to check if a specific path or any file inside a directory changed
+			checkFlatBOM := func(p string) {
+				for changedFile := range changedFiles {
+					if changedFile == p || strings.HasPrefix(changedFile, p+"/") {
+						if bomBump < BumpPatch {
+							bomBump = BumpPatch
+						}
+					}
+				}
+			}
+			
+			for _, drv := range localManifest.Sources.Drivers {
+				checkFlatBOM(drv)
+			}
+			for _, ext := range localManifest.Sources.Extra {
+				checkFlatBOM(ext)
+			}
+			for _, inc := range localManifest.Includes {
+				checkFlatBOM(inc)
+			}
+		}
+		
+		if bomBump > maxBump {
+			maxBump = bomBump
 		}
 
 		if maxBump > BumpNone {

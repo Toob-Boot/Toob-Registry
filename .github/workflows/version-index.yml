@@ -7,7 +7,7 @@ on:
     paths:
       - "chips/**"
       - "toolchains/**"
-      - "vendor/**"
+      - "drivers/**"
       - "arch/**"
       - "integrations/**"
   workflow_dispatch:

@@ -37,7 +37,8 @@ boot_status_t esp_flash_init(void)
 {
     s_last_vendor_error = 0;
 
-    int rc = ROM_PTR_FLASH_UNLOCK();
+    int (*rom_unlock)(void) = (int (*)(void))CHIP_REG_ROM_PTR_FLASH_UNLOCK;
+    int rc = rom_unlock();
     if (rc != ESP_ROM_OK) {
         s_last_vendor_error = (uint32_t)rc;
         return BOOT_ERR_FLASH;
@@ -62,11 +63,11 @@ boot_status_t esp_flash_read(uint32_t addr, void *buf, size_t len)
     if (buf == NULL) {
         return BOOT_ERR_INVALID_ARG;
     }
-    if (addr + len > CHIP_FLASH_TOTAL_SIZE) {
+    if (addr + len > CHIP_REG_FLASH_TOTAL_SIZE) {
         return BOOT_ERR_FLASH_BOUNDS;
     }
 
-    const void *src = (const void *)(uintptr_t)(CHIP_FLASH_XIP_BASE + addr);
+    const void *src = (const void *)(uintptr_t)(CHIP_REG_FLASH_XIP_BASE + addr);
     memcpy(buf, src, len);
 
     return BOOT_OK;
@@ -83,13 +84,13 @@ boot_status_t esp_flash_write(uint32_t addr, const void *buf, size_t len)
     if (buf == NULL || len == 0U) {
         return BOOT_ERR_INVALID_ARG;
     }
-    if ((addr % CHIP_FLASH_WRITE_ALIGNMENT) != 0U) {
+    if ((addr % CHIP_REG_FLASH_WRITE_ALIGNMENT) != 0U) {
         return BOOT_ERR_FLASH_ALIGN;
     }
-    if ((len % CHIP_FLASH_WRITE_ALIGNMENT) != 0U) {
+    if ((len % CHIP_REG_FLASH_WRITE_ALIGNMENT) != 0U) {
         return BOOT_ERR_FLASH_ALIGN;
     }
-    if (addr + len > CHIP_FLASH_TOTAL_SIZE) {
+    if (addr + len > CHIP_REG_FLASH_TOTAL_SIZE) {
         return BOOT_ERR_FLASH_BOUNDS;
     }
 
@@ -99,7 +100,7 @@ boot_status_t esp_flash_write(uint32_t addr, const void *buf, size_t len)
      * 32-bit aligned word checks for speed per hals.md spec.
      */
     const volatile uint32_t *check_ptr =
-        (const volatile uint32_t *)(uintptr_t)(CHIP_FLASH_XIP_BASE + addr);
+        (const volatile uint32_t *)(uintptr_t)(CHIP_REG_FLASH_XIP_BASE + addr);
     size_t word_count = len / sizeof(uint32_t);
     for (size_t i = 0; i < word_count; i++) {
         if (check_ptr[i] != 0xFFFFFFFFU) {
@@ -116,7 +117,8 @@ boot_status_t esp_flash_write(uint32_t addr, const void *buf, size_t len)
     while (remaining > 0U) {
         uint32_t chunk = (remaining > 256U) ? 256U : remaining;
 
-        int rc = ROM_PTR_FLASH_WRITE(offset, src, chunk);
+        int (*rom_write)(uint32_t, const void*, uint32_t) = (int (*)(uint32_t, const void*, uint32_t))CHIP_REG_ROM_PTR_FLASH_WRITE;
+        int rc = rom_write(offset, src, chunk);
         if (rc != ESP_ROM_OK) {
             s_last_vendor_error = (uint32_t)rc;
             return BOOT_ERR_FLASH;
@@ -137,15 +139,16 @@ boot_status_t esp_flash_write(uint32_t addr, const void *buf, size_t len)
  */
 boot_status_t esp_flash_erase_sector(uint32_t addr)
 {
-    if ((addr % CHIP_FLASH_MAX_SECTOR_SIZE) != 0U) {
+    if ((addr % CHIP_REG_FLASH_MAX_SECTOR_SIZE) != 0U) {
         return BOOT_ERR_FLASH_ALIGN;
     }
-    if (addr >= CHIP_FLASH_TOTAL_SIZE) {
+    if (addr >= CHIP_REG_FLASH_TOTAL_SIZE) {
         return BOOT_ERR_FLASH_BOUNDS;
     }
 
-    uint32_t sector_num = addr / CHIP_FLASH_MAX_SECTOR_SIZE;
-    int rc = ROM_PTR_FLASH_ERASE(sector_num);
+    uint32_t sector_num = addr / CHIP_REG_FLASH_MAX_SECTOR_SIZE;
+    int (*rom_erase)(uint32_t) = (int (*)(uint32_t))CHIP_REG_ROM_PTR_FLASH_ERASE;
+    int rc = rom_erase(sector_num);
 
     if (rc != ESP_ROM_OK) {
         s_last_vendor_error = (uint32_t)rc;
@@ -163,11 +166,11 @@ boot_status_t esp_flash_get_sector_size(uint32_t addr, size_t *size_out)
     if (size_out == NULL) {
         return BOOT_ERR_INVALID_ARG;
     }
-    if (addr >= CHIP_FLASH_TOTAL_SIZE) {
+    if (addr >= CHIP_REG_FLASH_TOTAL_SIZE) {
         return BOOT_ERR_FLASH_BOUNDS;
     }
 
-    *size_out = CHIP_FLASH_MAX_SECTOR_SIZE;
+    *size_out = CHIP_REG_FLASH_MAX_SECTOR_SIZE;
     return BOOT_OK;
 }
 

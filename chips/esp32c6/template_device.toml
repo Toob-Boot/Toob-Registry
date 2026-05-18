@@ -1,12 +1,18 @@
-name = "{{.ProjectName}}"
-version = "0.1.0"
+name = "TestDevice"
+version = "v1.0.0"
 
 [device]
-vendor = "esp"
 chip = "esp32c6"
 
+[build]
+compiler = "riscv32-esp-elf"
+core_sdk = "toob-boot"
+registry = "https://example.com"
+
+[driver_config]
+uart_baudrate = 115200
+
 [partitions]
-# Budgets in Bytes (ESP32-C6 has 4MB Flash)
 stage0_size = 32768        # 32 KB
 stage1_size = 65536        # 64 KB (Accepted 55KB footprint)
 app_size = 393216          # 384 KB
@@ -17,7 +23,8 @@ wal_sectors = 4            # Number of sectors for the Write-Ahead Log
 
 [boot_config]
 max_retries = 3
-max_recovery_retries = 3
-edge_unattended_mode = false
-backoff_base_s = 3600
-wdt_timeout_ms = 4100
+max_recovery_retries = 5
+edge_unattended_mode = true
+backoff_base_s = 10
+wdt_timeout_ms = 5000
+

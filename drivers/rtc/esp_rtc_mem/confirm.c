@@ -20,6 +20,7 @@
 
 #include "esp_common.h"
 #include "chip_config.h"
+#include "generated_boot_config.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -47,7 +48,7 @@ void esp_confirm_deinit(void)
  */
 bool esp_confirm_check_ok(uint64_t expected_nonce)
 {
-    volatile uint64_t *nonce_ptr = ADDR_CONFIRM_RTC_RAM;
+    volatile uint64_t *nonce_ptr = (volatile uint64_t *)CHIP_REG_RTC_RAM_BASE;
     uint64_t stored = *nonce_ptr;
 
     if (stored != expected_nonce) {
@@ -74,7 +75,7 @@ bool esp_confirm_check_ok(uint64_t expected_nonce)
  */
 boot_status_t esp_confirm_clear(void)
 {
-    volatile uint64_t *nonce_ptr = ADDR_CONFIRM_RTC_RAM;
+    volatile uint64_t *nonce_ptr = (volatile uint64_t *)CHIP_REG_RTC_RAM_BASE;
     *nonce_ptr = 0ULL;
 
     /* Read-after-write verify (GAP-C08) */

@@ -1,0 +1,6 @@
+{
+  "name": "esp_rom_spi",
+  "author": "toob-core-team",
+  "version": "1.0.0",
+  "description": "ESP32 SPI Flash Driver via ROM pointers"
+}

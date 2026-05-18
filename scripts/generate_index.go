@@ -21,7 +21,7 @@ type ComponentVersion struct {
 type InternalTopology struct {
 	Chips        []ComponentVersion `json:"chips"`
 	Archs        []ComponentVersion `json:"archs"`
-	Vendors      []ComponentVersion `json:"vendors"`
+	Drivers      []ComponentVersion `json:"drivers"`
 	Toolchains   []ComponentVersion `json:"toolchains"`
 	Integrations []ComponentVersion `json:"integrations"`
 }
@@ -189,7 +189,7 @@ func getRegistryVersions() []RegistryRelease {
 				var registry struct {
 					Chips        map[string]struct{ Version string } `json:"chips"`
 					Archs        map[string]struct{ Version string } `json:"archs"`
-					Vendors      map[string]struct{ Version string } `json:"vendors"`
+					Drivers      map[string]struct{ Version string; Path string } `json:"drivers"`
 					Toolchains   map[string]struct{ Version string } `json:"toolchains"`
 					Integrations map[string]struct{ Version string } `json:"integrations"`
 				}
@@ -206,10 +206,10 @@ func getRegistryVersions() []RegistryRelease {
 							Source: fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/%s/arch/%s", name, cName),
 						})
 					}
-					for cName, cItem := range registry.Vendors {
-						release.Internal.Vendors = append(release.Internal.Vendors, ComponentVersion{
+					for cName, cItem := range registry.Drivers {
+						release.Internal.Drivers = append(release.Internal.Drivers, ComponentVersion{
 							Name: cName, Version: cItem.Version,
-							Source: fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/%s/vendor/%s", name, cName),
+							Source: fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/%s/%s", name, cItem.Path),
 						})
 					}
 					for cName, cItem := range registry.Toolchains {
@@ -291,7 +291,7 @@ func main() {
 		var registry struct {
 			Chips        map[string]struct{ Version string } `json:"chips"`
 			Archs        map[string]struct{ Version string } `json:"archs"`
-			Vendors      map[string]struct{ Version string } `json:"vendors"`
+			Drivers      map[string]struct{ Version string; Path string } `json:"drivers"`
 			Toolchains   map[string]struct{ Version string } `json:"toolchains"`
 			Integrations map[string]struct{ Version string } `json:"integrations"`
 		}
@@ -310,11 +310,11 @@ func main() {
 					Source:  fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/main/arch/%s", name),
 				})
 			}
-			for name, item := range registry.Vendors {
-				topology.MainBranch.Vendors = append(topology.MainBranch.Vendors, ComponentVersion{
+			for name, item := range registry.Drivers {
+				topology.MainBranch.Drivers = append(topology.MainBranch.Drivers, ComponentVersion{
 					Name:    name,
 					Version: item.Version,
-					Source:  fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/main/vendor/%s", name),
+					Source:  fmt.Sprintf("https://github.com/Toob-Boot/Toob-Registry/tree/main/%s", item.Path),
 				})
 			}
 			for name, item := range registry.Toolchains {

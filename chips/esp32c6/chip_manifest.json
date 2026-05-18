@@ -3,8 +3,28 @@
     "compiler_prefix": "riscv32-esp-elf-",
     "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)",
     "name": "esp32c6",
-    "vendor": "esp",
     "version": "1.1.0",
     "min_core_sdk": "core/v0.0.1",
-    "min_compiler": "latest"
+    "min_compiler": "latest",
+    "sources": {
+        "startup": "startup.c",
+        "platform": "chip_platform.c",
+        "config": "chip_config.h",
+        "linker": "esp32c6_stage1.ld",
+        "hardware": "hardware.json",
+        "drivers": [
+            "drivers/uart/esp_uart_v1/console.c",
+            "drivers/flash/esp_rom_spi/flash.c",
+            "drivers/wdt/esp_rwdt_with_swd/wdt.c",
+            "drivers/rtc/esp_rtc_mem/confirm.c",
+            "drivers/clock/esp_systimer/reset_reason.c"
+        ],
+        "extra": [
+            "mock_efuse.c"
+        ]
+    },
+    "includes": [
+        "soc/esp/include",
+        "arch/riscv32/include"
+    ]
 }

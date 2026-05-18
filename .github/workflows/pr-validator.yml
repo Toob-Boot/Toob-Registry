@@ -5,7 +5,7 @@ on:
     paths:
       - "chips/**"
       - "toolchains/**"
-      - "vendor/**"
+      - "drivers/**"
       - "arch/**"
       - "integrations/**"
       - "registry.json"
