@@ -1052,9 +1052,9 @@
       "cli_version": "v0.0.13",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.8",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:58Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:25Z",
+      "retry_count": 2
     },
     "MT-96CB7350": {
       "id": "MT-96CB7350",
