@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-18T13:46:58Z",
+    "generated_at": "2026-05-18T13:48:02Z",
     "main_branch": {
         "chips": [
             {
@@ -17,16 +17,6 @@
         ],
         "drivers": [
             {
-                "name": "esp_rom_spi",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
-            },
-            {
-                "name": "esp_rtc_mem",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/rtc/esp_rtc_mem"
-            },
-            {
                 "name": "esp_rwdt_with_swd",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/wdt/esp_rwdt_with_swd"
@@ -40,6 +30,16 @@
                 "name": "esp_uart_v1",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/uart/esp_uart_v1"
+            },
+            {
+                "name": "esp_rom_spi",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
+            },
+            {
+                "name": "esp_rtc_mem",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/rtc/esp_rtc_mem"
             }
         ],
         "toolchains": [
