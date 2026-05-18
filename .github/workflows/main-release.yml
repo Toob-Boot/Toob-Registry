@@ -8,6 +8,8 @@ on:
       - "chips/**"
       - "toolchains/**"
       - "arch/**"
+      - "drivers/**"
+      - "soc/**"
 
 permissions:
   contents: write # Needed to commit registry.json and create tags
@@ -63,10 +65,14 @@ jobs:
           NEW_VERSION=$(jq -r '.registry_version' registry.json)
 
           echo ">>> Committing registry.json with version $NEW_VERSION"
-          git add registry.json chips/** arch/** toolchains/**
+          git add registry.json compatibility_matrix.json \
+                  chips/** arch/** toolchains/** drivers/** soc/**
+          git diff --staged --quiet && { echo "Nothing to commit after staging."; exit 0; }
           git commit -m "chore: auto-generate registry index $NEW_VERSION [skip ci]"
 
           echo ">>> Pushing commit to main..."
+          git checkout -- . 2>/dev/null || true
+          git clean -fd 2>/dev/null || true
           git pull --rebase origin main
           git push origin main
 
