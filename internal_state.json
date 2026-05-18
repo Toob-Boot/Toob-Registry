@@ -484,6 +484,17 @@
       "last_tested": "2026-05-18T16:44:24Z",
       "retry_count": 0
     },
+    "MT-E1ABDC43": {
+      "id": "MT-E1ABDC43",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.0.13",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.9",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:25Z",
+      "retry_count": 0
+    },
     "MT-E8DED2CC": {
       "id": "MT-E8DED2CC",
       "chip": "esp32c6",
