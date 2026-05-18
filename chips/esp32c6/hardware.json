@@ -62,11 +62,6 @@
         "ipc_mechanism": "shared_ram",
         "is_multi_core": true
     },
-    "_unused_registers_comment": "These registers are not used by current drivers but kept for future reference",
-    "_unused_registers": {
-        "pcr_base": "0x60096000",
-        "rom_ptr_flash_read": "0x40000150"
-    },
     "memory": {
         "ram_base": "0x40800000",
         "ram_size": "0x8000"
