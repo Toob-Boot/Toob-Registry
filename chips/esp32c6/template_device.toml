@@ -7,7 +7,7 @@ chip = "esp32c6"
 [build]
 compiler = "riscv32-esp-elf"
 core_sdk = "toob-boot"
-registry = "https://example.com"
+registry = "https://github.com/toob-boot/toob-registry"
 
 [driver_config]
 uart_baudrate = 115200

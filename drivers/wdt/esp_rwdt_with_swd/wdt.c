@@ -55,11 +55,11 @@ static uint32_t s_saved_prescaler;
  * @brief Disable a single WDT peripheral (Unlock → Config=0 pattern).
  *
  * All ESP WDTs are write-protected. The unlock key value is chip-specific
- * and provided via CHIP_REG_VAL_WDT_UNLOCK in chip_config.h.
+ * and provided via CHIP_VAL_WDT_UNLOCK in chip_config.h.
  */
 static void wdt_disable(uint32_t config_addr, uint32_t wprotect_addr)
 {
-    REG_WRITE(wprotect_addr, CHIP_REG_VAL_WDT_UNLOCK);
+    REG_WRITE(wprotect_addr, CHIP_VAL_WDT_UNLOCK);
     REG_WRITE(config_addr, 0U);
     REG_WRITE(wprotect_addr, 0U);
 }
@@ -72,7 +72,7 @@ static void wdt_disable(uint32_t config_addr, uint32_t wprotect_addr)
  */
 static void swd_disable(void)
 {
-    REG_WRITE(SWD_WPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
+    REG_WRITE(SWD_WPROTECT, CHIP_VAL_WDT_UNLOCK);
     REG_SET_BIT(SWD_CONFIG, SWD_AUTO_FEED_BIT);
     REG_WRITE(SWD_WPROTECT, 0U);
 }
@@ -86,7 +86,7 @@ boot_status_t esp_rwdt_init(uint32_t timeout_ms)
     wdt_disable(TIMG1_WDTCONFIG0, TIMG1_WDTWPROTECT);
     wdt_disable(LPWDT_CONFIG0, LPWDT_WPROTECT);
 
-#if CHIP_REG_HAS_SWD
+#if CHIP_HAS_SWD
     swd_disable();
 #endif
 
@@ -108,7 +108,7 @@ boot_status_t esp_rwdt_init(uint32_t timeout_ms)
     uint32_t prescaler = 40000U;
     s_saved_prescaler = prescaler;
 
-    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
+    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_VAL_WDT_UNLOCK);
 
     /* CONFIG1: prescaler value (bits 15:0) */
     REG_WRITE(TIMG0_WDTCONFIG1, prescaler << 16);
@@ -140,7 +140,7 @@ void esp_rwdt_deinit(void)
 
 void esp_rwdt_kick(void)
 {
-    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
+    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_VAL_WDT_UNLOCK);
     REG_WRITE(TIMG0_WDTFEED, 1U);
     REG_WRITE(TIMG0_WDTWPROTECT, 0U);
 }
@@ -154,7 +154,7 @@ void esp_rwdt_kick(void)
  */
 void esp_rwdt_suspend(void)
 {
-    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
+    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_VAL_WDT_UNLOCK);
     REG_WRITE(TIMG0_WDTCONFIG1, 0xFFFFU << 16);
     REG_WRITE(TIMG0_WDTFEED, 1U);
     REG_WRITE(TIMG0_WDTWPROTECT, 0U);
@@ -162,7 +162,7 @@ void esp_rwdt_suspend(void)
 
 void esp_rwdt_resume(void)
 {
-    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_REG_VAL_WDT_UNLOCK);
+    REG_WRITE(TIMG0_WDTWPROTECT, CHIP_VAL_WDT_UNLOCK);
     REG_WRITE(TIMG0_WDTCONFIG1, s_saved_prescaler << 16);
     REG_WRITE(TIMG0_WDTFEED, 1U);
     REG_WRITE(TIMG0_WDTWPROTECT, 0U);

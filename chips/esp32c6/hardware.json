@@ -28,29 +28,6 @@
         "pka_present": true,
         "arena_size": 2048
     },
-    "watchdogs": [
-        {
-            "address": "0x60008064",
-            "config_addr": "0x60008048",
-            "disable_val": "0x0",
-            "name": "TIMG0_WDT",
-            "unlock_val": "0x50D83AA1"
-        },
-        {
-            "address": "0x60009064",
-            "config_addr": "0x60009048",
-            "disable_val": "0x0",
-            "name": "TIMG1_WDT",
-            "unlock_val": "0x50D83AA1"
-        },
-        {
-            "address": "0x600B0414",
-            "config_addr": "0x600B0400",
-            "disable_val": "0x0",
-            "name": "LP_WDT",
-            "unlock_val": "0x50D83AA1"
-        }
-    ],
     "multi_core": {
         "coprocessors": [
             {
@@ -68,24 +45,27 @@
     },
     "registers": {
         "uart0_base": "0x60000000",
-        "uart_sclk_freq": 40000000,
-        "uart_tx_fifo_size": 128,
-        "cpu_freq_hz": 160000000,
         "systimer_base": "0x6000A000",
         "flash_xip_base": "0x42000000",
-        "flash_total_size": 4194304,
-        "flash_max_sector_size": 4096,
-        "flash_write_alignment": 4,
-        "rom_ptr_flash_erase": "0x40000144",
-        "rom_ptr_flash_write": "0x4000014c",
-        "rom_ptr_flash_unlock": "0x40000154",
         "timg0_wdt_base": "0x60008000",
         "timg1_wdt_base": "0x60009000",
         "lp_wdt_base": "0x600B1C00",
+        "pmu_base": "0x600B0000",
+        "rtc_ram_base": "0x50000000",
+        "rng_data_reg": "0x60026000",
+        "efuse_base": "0x600B0800",
+        "rom_ptr_flash_erase": "0x40000144",
+        "rom_ptr_flash_write": "0x4000014c",
+        "rom_ptr_flash_read": "0x40000150",
+        "rom_ptr_flash_unlock": "0x40000154"
+    },
+    "constants": {
+        "cpu_freq_hz": 160000000,
+        "uart_sclk_freq": 40000000,
+        "uart_tx_fifo_size": 128,
+        "flash_erased_byte": 255,
         "val_wdt_unlock": "0x50D83AA1",
         "has_swd": 1,
-        "rtc_ram_base": "0x50000000",
-        "pmu_base": "0x600B0000",
         "rst_poweron": 1,
         "rst_sw_sys": 3,
         "rst_deepsleep": 5,
@@ -98,7 +78,7 @@
         "rst_brownout": 15,
         "rst_rtcwdt_rtc": 16,
         "rst_swd": 18,
-        "rng_data_reg": "0x60026000",
-        "efuse_base": "0x600B0800"
+        "rst_cause_mask": "0x1F",
+        "rst_cause_offset": "0x0410"
     }
 }

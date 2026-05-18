@@ -19,6 +19,7 @@
 #define ESP_COMMON_H
 
 #include "boot_types.h"
+#include "generated_boot_config.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -35,6 +36,20 @@ typedef int (*esp_rom_spiflash_erase_sector_t)(uint32_t sector_number);
 typedef int (*esp_rom_spiflash_write_t)(uint32_t dest_addr, const void *src, uint32_t len);
 typedef int (*esp_rom_spiflash_unlock_t)(void);
 typedef int (*esp_rom_spiflash_read_t)(uint32_t src_addr, void *dest, uint32_t len);
+
+/*
+ * Typed ROM pointer macros. These combine the generated CHIP_REG_ROM_PTR_*
+ * addresses from hardware.json with the correct C function signatures,
+ * so drivers don't need manual casts.
+ *
+ * Usage: int rc = ROM_FLASH_ERASE(sector_number);
+ */
+#ifdef CHIP_REG_ROM_PTR_FLASH_ERASE
+#define ROM_FLASH_ERASE   ((esp_rom_spiflash_erase_sector_t)(uintptr_t)CHIP_REG_ROM_PTR_FLASH_ERASE)
+#define ROM_FLASH_WRITE   ((esp_rom_spiflash_write_t)(uintptr_t)CHIP_REG_ROM_PTR_FLASH_WRITE)
+#define ROM_FLASH_READ    ((esp_rom_spiflash_read_t)(uintptr_t)CHIP_REG_ROM_PTR_FLASH_READ)
+#define ROM_FLASH_UNLOCK  ((esp_rom_spiflash_unlock_t)(uintptr_t)CHIP_REG_ROM_PTR_FLASH_UNLOCK)
+#endif
 
 /* ESP BootROM return convention: 0 = success, non-zero = error */
 #define ESP_ROM_OK 0

@@ -25,7 +25,7 @@
 
 #include "arch_riscv.h"
 #include "esp_common.h"
-#include "../../../toobloader/crypto/monocypher/crypto_monocypher.h"
+#include "crypto_monocypher.h"
 
 #include <stddef.h>
 
@@ -77,7 +77,7 @@ static const wdt_hal_t esp32c6_wdt_hal = {
  * ======================================================================== */
 static boot_status_t esp32c6_clock_init(void)
 {
-    arch_riscv_timer_init(CHIP_REG_SYSTIMER_BASE, CHIP_REG_CPU_FREQ_HZ);
+    arch_riscv_timer_init(CHIP_REG_SYSTIMER_BASE, CHIP_CPU_FREQ_HZ);
     return BOOT_OK;
 }
 

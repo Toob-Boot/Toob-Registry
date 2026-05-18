@@ -24,7 +24,6 @@
         ]
     },
     "includes": [
-        "soc/esp/include",
-        "arch/riscv32/include"
+        "soc/esp/include"
     ]
 }

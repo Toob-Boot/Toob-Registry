@@ -38,29 +38,29 @@ reset_reason_t esp_get_reset_reason(void)
     uint32_t raw = REG_READ(CHIP_REG_PMU_BASE + 0x410U) & 0x1FU;
 
     switch (raw) {
-    case CHIP_REG_RST_TG0WDT:
-    case CHIP_REG_RST_TG1WDT:
-    case CHIP_REG_RST_RTCWDT_SYS:
-    case CHIP_REG_RST_TG0WDT_CPU:
-    case CHIP_REG_RST_RTCWDT_CPU:
-    case CHIP_REG_RST_RTCWDT_RTC:
-#if CHIP_REG_HAS_SWD
-    case CHIP_REG_RST_SWD:
+    case CHIP_RST_TG0WDT:
+    case CHIP_RST_TG1WDT:
+    case CHIP_RST_RTCWDT_SYS:
+    case CHIP_RST_TG0WDT_CPU:
+    case CHIP_RST_RTCWDT_CPU:
+    case CHIP_RST_RTCWDT_RTC:
+#if CHIP_HAS_SWD
+    case CHIP_RST_SWD:
 #endif
         s_reason = RESET_REASON_WATCHDOG;
         break;
 
-    case CHIP_REG_RST_BROWNOUT:
+    case CHIP_RST_BROWNOUT:
         s_reason = RESET_REASON_BROWNOUT;
         break;
 
-    case CHIP_REG_RST_SW_SYS:
-    case CHIP_REG_RST_SW_CPU:
+    case CHIP_RST_SW_SYS:
+    case CHIP_RST_SW_CPU:
         s_reason = RESET_REASON_SOFTWARE;
         break;
 
-    case CHIP_REG_RST_POWERON:
-    case CHIP_REG_RST_DEEPSLEEP:
+    case CHIP_RST_POWERON:
+    case CHIP_RST_DEEPSLEEP:
         s_reason = RESET_REASON_POWER_ON;
         break;
 
