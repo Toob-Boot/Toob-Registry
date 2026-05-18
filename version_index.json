@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-18T14:45:00Z",
+    "generated_at": "2026-05-18T14:50:59Z",
     "main_branch": {
         "chips": [
             {
@@ -16,11 +16,6 @@
             }
         ],
         "drivers": [
-            {
-                "name": "esp_rom_spi",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
-            },
             {
                 "name": "esp_rtc_mem",
                 "version": "1.0.0",
@@ -40,6 +35,11 @@
                 "name": "esp_uart_v1",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/uart/esp_uart_v1"
+            },
+            {
+                "name": "esp_rom_spi",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
             }
         ],
         "toolchains": [
@@ -51,6 +51,11 @@
         ],
         "integrations": [
             {
+                "name": "zephyr",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/zephyr"
+            },
+            {
                 "name": "baremetal",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
@@ -59,11 +64,6 @@
                 "name": "espidf",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/espidf"
-            },
-            {
-                "name": "zephyr",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/zephyr"
             }
         ]
     },
@@ -89,11 +89,6 @@
                     ],
                     "drivers": [
                         {
-                            "name": "esp_systimer",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/clock/esp_systimer"
-                        },
-                        {
                             "name": "esp_uart_v1",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/uart/esp_uart_v1"
@@ -112,6 +107,11 @@
                             "name": "esp_rwdt_with_swd",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/wdt/esp_rwdt_with_swd"
+                        },
+                        {
+                            "name": "esp_systimer",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/clock/esp_systimer"
                         }
                     ],
                     "toolchains": [
@@ -123,11 +123,6 @@
                     ],
                     "integrations": [
                         {
-                            "name": "espidf",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/espidf"
-                        },
-                        {
                             "name": "zephyr",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/zephyr"
@@ -136,12 +131,21 @@
                             "name": "baremetal",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/baremetal"
+                        },
+                        {
+                            "name": "espidf",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/espidf"
                         }
                     ]
                 }
             }
         ],
         "cli": [
+            {
+                "version": "cli/v0.6.0",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.6.0"
+            },
             {
                 "version": "cli/v0.5.3",
                 "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.5.3"
@@ -198,6 +202,10 @@
             }
         ],
         "compiler": [
+            {
+                "version": "v1.1.14",
+                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
+            },
             {
                 "version": "v1.1.13",
                 "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
