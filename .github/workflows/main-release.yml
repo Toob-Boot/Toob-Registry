@@ -7,7 +7,6 @@ on:
     paths:
       - "chips/**"
       - "toolchains/**"
-      - "vendor/**"
       - "arch/**"
 
 permissions:
@@ -64,7 +63,7 @@ jobs:
           NEW_VERSION=$(jq -r '.registry_version' registry.json)
 
           echo ">>> Committing registry.json with version $NEW_VERSION"
-          git add registry.json vendor/** chips/** arch/** toolchains/**
+          git add registry.json chips/** arch/** toolchains/**
           git commit -m "chore: auto-generate registry index $NEW_VERSION [skip ci]"
 
           echo ">>> Pushing commit to main..."
