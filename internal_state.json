@@ -33,6 +33,61 @@
       "last_tested": "2026-05-18T15:44:31Z",
       "retry_count": 0
     },
+    "MT-2A3C5FDD": {
+      "id": "MT-2A3C5FDD",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.3.7",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.14",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:32Z",
+      "retry_count": 0
+    },
+    "MT-3235FD76": {
+      "id": "MT-3235FD76",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.0.13",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.14",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:32Z",
+      "retry_count": 0
+    },
+    "MT-34795519": {
+      "id": "MT-34795519",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.2.0",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.14",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:32Z",
+      "retry_count": 0
+    },
+    "MT-391466AE": {
+      "id": "MT-391466AE",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.3.4",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.14",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:32Z",
+      "retry_count": 0
+    },
+    "MT-3A9EBDC8": {
+      "id": "MT-3A9EBDC8",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.2.1",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.14",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:32Z",
+      "retry_count": 0
+    },
     "MT-9FD9E25A": {
       "id": "MT-9FD9E25A",
       "chip": "esp32c6",
@@ -53,6 +108,17 @@
       "compiler_version": "v1.1.10",
       "status": "INFRA_ERROR",
       "last_tested": "2026-05-18T15:44:27Z",
+      "retry_count": 0
+    },
+    "MT-EFB316D5": {
+      "id": "MT-EFB316D5",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.6.0",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.14",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:32Z",
       "retry_count": 0
     }
   }
