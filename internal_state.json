@@ -33,6 +33,17 @@
       "last_tested": "2026-05-18T15:44:31Z",
       "retry_count": 0
     },
+    "MT-06FA54DB": {
+      "id": "MT-06FA54DB",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.5.3",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.13",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:40Z",
+      "retry_count": 0
+    },
     "MT-0CA59C07": {
       "id": "MT-0CA59C07",
       "chip": "esp32c6",
@@ -647,6 +658,17 @@
       "compiler_version": "v1.1.10",
       "status": "INFRA_ERROR",
       "last_tested": "2026-05-18T16:44:27Z",
+      "retry_count": 0
+    },
+    "MT-A263AF3E": {
+      "id": "MT-A263AF3E",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.6.0",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.13",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:40Z",
       "retry_count": 0
     },
     "MT-A431DE49": {
