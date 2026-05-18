@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-18T19:34:23Z",
+    "generated_at": "2026-05-18T20:06:17Z",
     "main_branch": {
         "chips": [
             {
@@ -16,11 +16,6 @@
             }
         ],
         "drivers": [
-            {
-                "name": "esp_rom_spi",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
-            },
             {
                 "name": "esp_rtc_mem",
                 "version": "1.0.0",
@@ -40,6 +35,11 @@
                 "name": "esp_uart_v1",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/uart/esp_uart_v1"
+            },
+            {
+                "name": "esp_rom_spi",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
             }
         ],
         "toolchains": [
@@ -69,6 +69,77 @@
     },
     "official": {
         "registry": [
+            {
+                "version": "v1.0.14",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/releases/tag/v1.0.14",
+                "internal_snapshot": {
+                    "chips": [
+                        {
+                            "name": "esp32c6",
+                            "version": "1.1.1",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/chips/esp32c6"
+                        }
+                    ],
+                    "archs": [
+                        {
+                            "name": "riscv32",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/arch/riscv32"
+                        }
+                    ],
+                    "drivers": [
+                        {
+                            "name": "esp_rwdt_with_swd",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/drivers/wdt/esp_rwdt_with_swd"
+                        },
+                        {
+                            "name": "esp_systimer",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/drivers/clock/esp_systimer"
+                        },
+                        {
+                            "name": "esp_uart_v1",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/drivers/uart/esp_uart_v1"
+                        },
+                        {
+                            "name": "esp_rom_spi",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/drivers/flash/esp_rom_spi"
+                        },
+                        {
+                            "name": "esp_rtc_mem",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/drivers/rtc/esp_rtc_mem"
+                        }
+                    ],
+                    "toolchains": [
+                        {
+                            "name": "riscv32-esp-elf",
+                            "version": "1.0.1",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/toolchains/riscv32-esp-elf"
+                        }
+                    ],
+                    "integrations": [
+                        {
+                            "name": "espidf",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/integrations/espidf"
+                        },
+                        {
+                            "name": "zephyr",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/integrations/zephyr"
+                        },
+                        {
+                            "name": "baremetal",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.14/integrations/baremetal"
+                        }
+                    ]
+                }
+            },
             {
                 "version": "v1.0.13",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/releases/tag/v1.0.13",
@@ -160,6 +231,16 @@
                     ],
                     "drivers": [
                         {
+                            "name": "esp_rtc_mem",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/rtc/esp_rtc_mem"
+                        },
+                        {
+                            "name": "esp_rwdt_with_swd",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/wdt/esp_rwdt_with_swd"
+                        },
+                        {
                             "name": "esp_systimer",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/clock/esp_systimer"
@@ -173,16 +254,6 @@
                             "name": "esp_rom_spi",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/flash/esp_rom_spi"
-                        },
-                        {
-                            "name": "esp_rtc_mem",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/rtc/esp_rtc_mem"
-                        },
-                        {
-                            "name": "esp_rwdt_with_swd",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/wdt/esp_rwdt_with_swd"
                         }
                     ],
                     "toolchains": [
@@ -227,54 +298,6 @@
         "compiler": [
             {
                 "version": "v1.1.15",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.14",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.13",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.12",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.11",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.10",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.9",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.8",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.7",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.6",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.5",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v1.1.4",
-                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
-            },
-            {
-                "version": "v0.1.2",
                 "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
             }
         ]
