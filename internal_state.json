@@ -209,6 +209,28 @@
       "last_tested": "2026-05-18T16:44:27Z",
       "retry_count": 0
     },
+    "MT-3DAC616B": {
+      "id": "MT-3DAC616B",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.4.2",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.11",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:35Z",
+      "retry_count": 0
+    },
+    "MT-4273C969": {
+      "id": "MT-4273C969",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.3.7",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.11",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:35Z",
+      "retry_count": 0
+    },
     "MT-43B7D4B3": {
       "id": "MT-43B7D4B3",
       "chip": "esp32c6",
@@ -352,6 +374,17 @@
       "last_tested": "2026-05-18T16:44:29Z",
       "retry_count": 0
     },
+    "MT-71FD644D": {
+      "id": "MT-71FD644D",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.5.3",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.12",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:35Z",
+      "retry_count": 0
+    },
     "MT-72688492": {
       "id": "MT-72688492",
       "chip": "esp32c6",
@@ -427,6 +460,28 @@
       "compiler_version": "v1.1.7",
       "status": "INFRA_ERROR",
       "last_tested": "2026-05-18T15:44:39Z",
+      "retry_count": 0
+    },
+    "MT-802761E7": {
+      "id": "MT-802761E7",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.5.2",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.12",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:35Z",
+      "retry_count": 0
+    },
+    "MT-8B6CC1D6": {
+      "id": "MT-8B6CC1D6",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.3.4",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.11",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:35Z",
       "retry_count": 0
     },
     "MT-917E0E40": {
@@ -682,6 +737,28 @@
       "last_tested": "2026-05-18T16:44:24Z",
       "retry_count": 0
     },
+    "MT-CC7664C1": {
+      "id": "MT-CC7664C1",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.4.3",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.11",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:35Z",
+      "retry_count": 0
+    },
+    "MT-D03138E2": {
+      "id": "MT-D03138E2",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.5.1",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.11",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:35Z",
+      "retry_count": 0
+    },
     "MT-D0421F19": {
       "id": "MT-D0421F19",
       "chip": "esp32c6",
@@ -724,6 +801,17 @@
       "compiler_version": "v1.1.9",
       "status": "INFRA_ERROR",
       "last_tested": "2026-05-18T16:44:24Z",
+      "retry_count": 0
+    },
+    "MT-D5649FA8": {
+      "id": "MT-D5649FA8",
+      "chip": "esp32c6",
+      "chip_version": "1.1.1",
+      "cli_version": "v0.6.0",
+      "core_version": "v0.0.1",
+      "compiler_version": "v1.1.12",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T16:44:35Z",
       "retry_count": 0
     },
     "MT-DEA5F7C8": {
