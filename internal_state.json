@@ -73,9 +73,9 @@
       "cli_version": "v0.5.3",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.13",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:37Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:42Z",
+      "retry_count": 2
     },
     "MT-08AFE6F3": {
       "id": "MT-08AFE6F3",
@@ -194,9 +194,9 @@
       "cli_version": "v0.4.3",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.13",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:37Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:42Z",
+      "retry_count": 2
     },
     "MT-24D20B6D": {
       "id": "MT-24D20B6D",
@@ -436,9 +436,9 @@
       "cli_version": "v0.6.0",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.14",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:40Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:42Z",
+      "retry_count": 2
     },
     "MT-3D06A80E": {
       "id": "MT-3D06A80E",
@@ -480,9 +480,9 @@
       "cli_version": "v0.5.1",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.13",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:37Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:42Z",
+      "retry_count": 2
     },
     "MT-40FD0288": {
       "id": "MT-40FD0288",
@@ -1646,9 +1646,9 @@
       "cli_version": "v0.4.2",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.13",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:37Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:42Z",
+      "retry_count": 2
     },
     "MT-D3C8C47F": {
       "id": "MT-D3C8C47F",
@@ -1921,9 +1921,9 @@
       "cli_version": "v0.5.2",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.13",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:37Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:42Z",
+      "retry_count": 2
     },
     "MT-FA2D1DF8": {
       "id": "MT-FA2D1DF8",
