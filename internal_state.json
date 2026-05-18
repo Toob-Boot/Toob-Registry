@@ -1,5 +1,38 @@
 {
   "combinations": {
+    "MT-06D0B3E0": {
+      "id": "MT-06D0B3E0",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.6.0",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.12",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:31Z",
+      "retry_count": 0
+    },
+    "MT-14658F90": {
+      "id": "MT-14658F90",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.0.15",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.14",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:31Z",
+      "retry_count": 0
+    },
+    "MT-29B684BB": {
+      "id": "MT-29B684BB",
+      "chip": "esp32c6",
+      "chip_version": "1.1.0",
+      "cli_version": "cli/v0.2.2",
+      "core_version": "0.0.1",
+      "compiler_version": "v1.1.14",
+      "status": "INFRA_ERROR",
+      "last_tested": "2026-05-18T15:44:31Z",
+      "retry_count": 0
+    },
     "MT-9FD9E25A": {
       "id": "MT-9FD9E25A",
       "chip": "esp32c6",
