@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-18T18:40:19Z",
+    "generated_at": "2026-05-18T18:51:46Z",
     "main_branch": {
         "chips": [
             {
@@ -51,6 +51,11 @@
         ],
         "integrations": [
             {
+                "name": "baremetal",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
+            },
+            {
                 "name": "espidf",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/espidf"
@@ -59,11 +64,6 @@
                 "name": "zephyr",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/zephyr"
-            },
-            {
-                "name": "baremetal",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/integrations/baremetal"
             }
         ]
     },
@@ -89,16 +89,6 @@
                     ],
                     "drivers": [
                         {
-                            "name": "esp_systimer",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.13/drivers/clock/esp_systimer"
-                        },
-                        {
-                            "name": "esp_uart_v1",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.13/drivers/uart/esp_uart_v1"
-                        },
-                        {
                             "name": "esp_rom_spi",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.13/drivers/flash/esp_rom_spi"
@@ -112,6 +102,16 @@
                             "name": "esp_rwdt_with_swd",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.13/drivers/wdt/esp_rwdt_with_swd"
+                        },
+                        {
+                            "name": "esp_systimer",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.13/drivers/clock/esp_systimer"
+                        },
+                        {
+                            "name": "esp_uart_v1",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.13/drivers/uart/esp_uart_v1"
                         }
                     ],
                     "toolchains": [
@@ -160,6 +160,11 @@
                     ],
                     "drivers": [
                         {
+                            "name": "esp_rom_spi",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/flash/esp_rom_spi"
+                        },
+                        {
                             "name": "esp_rtc_mem",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/rtc/esp_rtc_mem"
@@ -178,11 +183,6 @@
                             "name": "esp_uart_v1",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/uart/esp_uart_v1"
-                        },
-                        {
-                            "name": "esp_rom_spi",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/flash/esp_rom_spi"
                         }
                     ],
                     "toolchains": [
@@ -194,11 +194,6 @@
                     ],
                     "integrations": [
                         {
-                            "name": "zephyr",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/zephyr"
-                        },
-                        {
                             "name": "baremetal",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/baremetal"
@@ -207,6 +202,11 @@
                             "name": "espidf",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/espidf"
+                        },
+                        {
+                            "name": "zephyr",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/zephyr"
                         }
                     ]
                 }
