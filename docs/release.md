@@ -134,16 +134,29 @@ git push origin compiler/vX.Y.Z
 **Source:** `chips/`, `arch/`, `vendor/`, `toolchains/` in `Toob-Registry`.  
 **Distribution:** Git tags on `Toob-Boot/Toob-Registry`.
 
-1. Merge to `main` with hardware manifest changes
-2. `main-release.yml` calculates SemVer inheritance chain
-3. Bumps `registry_version`, pushes tag (e.g. `v1.0.8`)
-4. Triggers `version-index.yml` and `compatibility-matrix.yml`
+### Automatic Release Cycle
+
+To prevent race conditions between the registry compilation and index generation, the Registry release cycle follows a strict, sequential pipeline:
+
+1. **Trigger:** Developer merges or pushes changes (e.g., hardware manifests, toolchain definitions) to the `main` branch.
+2. **Phase 1: Registry Auto-Release (`main-release.yml`)**
+   - The SemVer Calculator (`semver_calc.go`) evaluates all changes against the latest local git tag.
+   - It performs automated version bumps for modified components and enforces **strict downgrade protection** to prevent supply-chain attacks.
+   - `build_registry.go` aggregates all manifests into a single `registry.json`.
+   - The workflow commits the `registry.json`, pushes it to `main`, and generates a new Git Tag (e.g., `v1.0.12`).
+3. **Phase 2: Version Index Generation (`version-index.yml`)**
+   - *Crucially, this workflow is triggered ONLY via `workflow_run` when Phase 1 successfully completes.* It does not run on `push`.
+   - `generate_index.go` queries the GitHub API for the newly pushed tag, along with CLI and Core releases.
+   - It builds the `version_index.json` topology.
+   - The workflow commits this index back to `main`. This ensures the index accurately reflects the newly minted tags from Phase 1 without race conditions.
+4. **Phase 3: Matrix Validation**
+   - The `compatibility-matrix.yml` workflow triggers to build and test the new registry combinations across the ecosystem.
 
 ### SemVer Inheritance
 
 Changes cascade upward. The highest bump in any dependency determines the parent's bump:
 
-```
+```text
 vendor/esp (PATCH) + arch/riscv32 (MINOR)
   → chip/esp32c6 inherits MINOR
     → registry_version inherits MINOR
