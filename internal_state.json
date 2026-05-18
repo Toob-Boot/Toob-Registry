@@ -425,9 +425,9 @@
       "cli_version": "v0.6.0",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.10",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:27Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:27Z",
+      "retry_count": 2
     },
     "MT-3C073A9D": {
       "id": "MT-3C073A9D",
@@ -821,9 +821,9 @@
       "cli_version": "v0.5.2",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.10",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:28Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:27Z",
+      "retry_count": 2
     },
     "MT-7114C1D2": {
       "id": "MT-7114C1D2",
@@ -1151,9 +1151,9 @@
       "cli_version": "v0.5.3",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.10",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:27Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:27Z",
+      "retry_count": 2
     },
     "MT-A0148B75": {
       "id": "MT-A0148B75",
@@ -1360,9 +1360,9 @@
       "cli_version": "v0.6.0",
       "core_version": "v0.0.1",
       "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:24Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:27Z",
+      "retry_count": 2
     },
     "MT-B0FC9E33": {
       "id": "MT-B0FC9E33",
@@ -1822,9 +1822,9 @@
       "cli_version": "v0.5.3",
       "core_version": "v0.0.1",
       "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:24Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:27Z",
+      "retry_count": 2
     },
     "MT-E81D9068": {
       "id": "MT-E81D9068",
