@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-18T13:48:02Z",
+    "generated_at": "2026-05-18T14:45:00Z",
     "main_branch": {
         "chips": [
             {
@@ -17,6 +17,16 @@
         ],
         "drivers": [
             {
+                "name": "esp_rom_spi",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
+            },
+            {
+                "name": "esp_rtc_mem",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/rtc/esp_rtc_mem"
+            },
+            {
                 "name": "esp_rwdt_with_swd",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/wdt/esp_rwdt_with_swd"
@@ -30,16 +40,6 @@
                 "name": "esp_uart_v1",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/uart/esp_uart_v1"
-            },
-            {
-                "name": "esp_rom_spi",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
-            },
-            {
-                "name": "esp_rtc_mem",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/rtc/esp_rtc_mem"
             }
         ],
         "toolchains": [
@@ -70,61 +70,74 @@
     "official": {
         "registry": [
             {
-                "version": "v1.0.8",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/releases/tag/v1.0.8",
+                "version": "v1.0.12",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/releases/tag/v1.0.12",
                 "internal_snapshot": {
                     "chips": [
                         {
                             "name": "esp32c6",
-                            "version": "1.2.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/chips/esp32c6"
+                            "version": "1.1.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/chips/esp32c6"
                         }
                     ],
                     "archs": [
                         {
                             "name": "riscv32",
                             "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/arch/riscv32"
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/arch/riscv32"
                         }
                     ],
-                    "drivers": null,
+                    "drivers": [
+                        {
+                            "name": "esp_systimer",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/clock/esp_systimer"
+                        },
+                        {
+                            "name": "esp_uart_v1",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/uart/esp_uart_v1"
+                        },
+                        {
+                            "name": "esp_rom_spi",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/flash/esp_rom_spi"
+                        },
+                        {
+                            "name": "esp_rtc_mem",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/rtc/esp_rtc_mem"
+                        },
+                        {
+                            "name": "esp_rwdt_with_swd",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/wdt/esp_rwdt_with_swd"
+                        }
+                    ],
                     "toolchains": [
                         {
                             "name": "riscv32-esp-elf",
-                            "version": "13.2.0_20230928",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.8/toolchains/riscv32-esp-elf"
-                        }
-                    ],
-                    "integrations": null
-                }
-            },
-            {
-                "version": "v1.0.6",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/releases/tag/v1.0.6",
-                "internal_snapshot": {
-                    "chips": [
-                        {
-                            "name": "esp32c6",
                             "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/chips/esp32c6"
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/toolchains/riscv32-esp-elf"
                         }
                     ],
-                    "archs": [
+                    "integrations": [
                         {
-                            "name": "riscv32",
+                            "name": "espidf",
                             "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/arch/riscv32"
-                        }
-                    ],
-                    "drivers": null,
-                    "toolchains": [
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/espidf"
+                        },
                         {
-                            "name": "riscv32-esp-elf",
-                            "version": "13.2.0_20230928",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.6/toolchains/riscv32-esp-elf"
+                            "name": "zephyr",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/zephyr"
+                        },
+                        {
+                            "name": "baremetal",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/baremetal"
                         }
-                    ],
-                    "integrations": null
+                    ]
                 }
             }
         ],
