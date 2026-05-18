@@ -458,9 +458,9 @@
       "cli_version": "v0.0.13",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.12",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:39Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:40Z",
+      "retry_count": 2
     },
     "MT-3DAC616B": {
       "id": "MT-3DAC616B",
@@ -887,9 +887,9 @@
       "cli_version": "v0.0.15",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.12",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:37Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:40Z",
+      "retry_count": 2
     },
     "MT-75454440": {
       "id": "MT-75454440",
@@ -1184,9 +1184,9 @@
       "cli_version": "v0.6.0",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.13",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:35Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:40Z",
+      "retry_count": 2
     },
     "MT-A40FF9B4": {
       "id": "MT-A40FF9B4",
