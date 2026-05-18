@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-05-18T18:51:46Z",
+    "generated_at": "2026-05-18T19:34:23Z",
     "main_branch": {
         "chips": [
             {
@@ -17,16 +17,6 @@
         ],
         "drivers": [
             {
-                "name": "esp_systimer",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/clock/esp_systimer"
-            },
-            {
-                "name": "esp_uart_v1",
-                "version": "1.0.0",
-                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/uart/esp_uart_v1"
-            },
-            {
                 "name": "esp_rom_spi",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/flash/esp_rom_spi"
@@ -40,6 +30,16 @@
                 "name": "esp_rwdt_with_swd",
                 "version": "1.0.0",
                 "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/wdt/esp_rwdt_with_swd"
+            },
+            {
+                "name": "esp_systimer",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/clock/esp_systimer"
+            },
+            {
+                "name": "esp_uart_v1",
+                "version": "1.0.0",
+                "source": "https://github.com/Toob-Boot/Toob-Registry/tree/main/drivers/uart/esp_uart_v1"
             }
         ],
         "toolchains": [
@@ -160,6 +160,16 @@
                     ],
                     "drivers": [
                         {
+                            "name": "esp_systimer",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/clock/esp_systimer"
+                        },
+                        {
+                            "name": "esp_uart_v1",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/uart/esp_uart_v1"
+                        },
+                        {
                             "name": "esp_rom_spi",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/flash/esp_rom_spi"
@@ -173,16 +183,6 @@
                             "name": "esp_rwdt_with_swd",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/wdt/esp_rwdt_with_swd"
-                        },
-                        {
-                            "name": "esp_systimer",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/clock/esp_systimer"
-                        },
-                        {
-                            "name": "esp_uart_v1",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/drivers/uart/esp_uart_v1"
                         }
                     ],
                     "toolchains": [
@@ -194,6 +194,11 @@
                     ],
                     "integrations": [
                         {
+                            "name": "zephyr",
+                            "version": "1.0.0",
+                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/zephyr"
+                        },
+                        {
                             "name": "baremetal",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/baremetal"
@@ -202,11 +207,6 @@
                             "name": "espidf",
                             "version": "1.0.0",
                             "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/espidf"
-                        },
-                        {
-                            "name": "zephyr",
-                            "version": "1.0.0",
-                            "source": "https://github.com/Toob-Boot/Toob-Registry/tree/v1.0.12/integrations/zephyr"
                         }
                     ]
                 }
@@ -214,56 +214,8 @@
         ],
         "cli": [
             {
-                "version": "cli/v0.6.0",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.6.0"
-            },
-            {
-                "version": "cli/v0.5.3",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.5.3"
-            },
-            {
-                "version": "cli/v0.5.2",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.5.2"
-            },
-            {
-                "version": "cli/v0.5.1",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.5.1"
-            },
-            {
-                "version": "cli/v0.4.3",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.4.3"
-            },
-            {
-                "version": "cli/v0.4.2",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.4.2"
-            },
-            {
-                "version": "cli/v0.3.7",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.3.7"
-            },
-            {
-                "version": "cli/v0.3.4",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.3.4"
-            },
-            {
-                "version": "cli/v0.2.2",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.2.2"
-            },
-            {
-                "version": "cli/v0.2.1",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.2.1"
-            },
-            {
-                "version": "cli/v0.2.0",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.2.0"
-            },
-            {
-                "version": "cli/v0.0.15",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.0.15"
-            },
-            {
-                "version": "cli/v0.0.13",
-                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.0.13"
+                "version": "cli/v0.6.1",
+                "source": "https://github.com/Toob-Boot/Toob-CLI-Release/releases/tag/cli/v0.6.1"
             }
         ],
         "core_sdk": [
@@ -273,6 +225,10 @@
             }
         ],
         "compiler": [
+            {
+                "version": "v1.1.15",
+                "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
+            },
             {
                 "version": "v1.1.14",
                 "source": "https://hub.docker.com/r/mannomannx/toob-compiler/tags"
