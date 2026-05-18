@@ -799,9 +799,9 @@
       "cli_version": "v0.0.15",
       "core_version": "v0.0.1",
       "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:25Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:32Z",
+      "retry_count": 2
     },
     "MT-6E014B48": {
       "id": "MT-6E014B48",
@@ -876,9 +876,9 @@
       "cli_version": "v0.2.0",
       "core_version": "v0.0.1",
       "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:25Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:32Z",
+      "retry_count": 2
     },
     "MT-747798CC": {
       "id": "MT-747798CC",
@@ -920,9 +920,9 @@
       "cli_version": "v0.2.1",
       "core_version": "v0.0.1",
       "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:25Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:32Z",
+      "retry_count": 2
     },
     "MT-7BA2AC91": {
       "id": "MT-7BA2AC91",
