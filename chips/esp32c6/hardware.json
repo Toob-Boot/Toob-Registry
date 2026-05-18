@@ -62,6 +62,11 @@
         "ipc_mechanism": "shared_ram",
         "is_multi_core": true
     },
+    "_unused_registers_comment": "These registers are not used by current drivers but kept for future reference",
+    "_unused_registers": {
+        "pcr_base": "0x60096000",
+        "rom_ptr_flash_read": "0x40000150"
+    },
     "memory": {
         "ram_base": "0x40800000",
         "ram_size": "0x8000"
@@ -72,14 +77,12 @@
         "uart_tx_fifo_size": 128,
         "cpu_freq_hz": 160000000,
         "systimer_base": "0x6000A000",
-        "pcr_base": "0x60096000",
         "flash_xip_base": "0x42000000",
         "flash_total_size": 4194304,
         "flash_max_sector_size": 4096,
         "flash_write_alignment": 4,
         "rom_ptr_flash_erase": "0x40000144",
         "rom_ptr_flash_write": "0x4000014c",
-        "rom_ptr_flash_read": "0x40000150",
         "rom_ptr_flash_unlock": "0x40000154",
         "timg0_wdt_base": "0x60008000",
         "timg1_wdt_base": "0x60009000",
