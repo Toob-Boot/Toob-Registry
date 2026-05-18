@@ -3,7 +3,7 @@
     "compiler_prefix": "riscv32-esp-elf-",
     "description": "Espressif ESP32-C6 (RISC-V, 4MB Flash, WiFi 6, BLE 5)",
     "name": "esp32c6",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "min_core_sdk": "core/v0.0.1",
     "min_compiler": "latest",
     "sources": {
