@@ -170,7 +170,8 @@ func calcBumpType(oldVer, newVer string) int {
 
 	// Downgrade protection
 	if nMajor < oMajor || (nMajor == oMajor && nMinor < oMinor) || (nMajor == oMajor && nMinor == oMinor && nPatch < oPatch) {
-		log.Fatalf("FATAL: Version downgrade detected! %s -> %s is not allowed.", oldVer, newVer)
+		log.Printf("WARNING: Version downgrade detected! %s -> %s. Treating as BumpMajor.", oldVer, newVer)
+		return BumpMajor
 	}
 
 	if nMajor > oMajor {
