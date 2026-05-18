@@ -1,15 +1,6 @@
 name: Generate Version Index
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "chips/**"
-      - "toolchains/**"
-      - "drivers/**"
-      - "arch/**"
-      - "integrations/**"
   workflow_dispatch:
   workflow_run:
     workflows: ["Registry Auto-Release"]
