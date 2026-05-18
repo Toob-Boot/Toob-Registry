@@ -172,9 +172,9 @@
       "cli_version": "v0.5.2",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.11",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:30Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:35Z",
+      "retry_count": 2
     },
     "MT-204383A2": {
       "id": "MT-204383A2",
@@ -469,9 +469,9 @@
       "cli_version": "v0.4.2",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.11",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:32Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:35Z",
+      "retry_count": 2
     },
     "MT-3E3F59CE": {
       "id": "MT-3E3F59CE",
@@ -1569,9 +1569,9 @@
       "cli_version": "v0.4.3",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.11",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:30Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:35Z",
+      "retry_count": 2
     },
     "MT-CE4DE28E": {
       "id": "MT-CE4DE28E",
@@ -1591,9 +1591,9 @@
       "cli_version": "v0.5.1",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.11",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:30Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:35Z",
+      "retry_count": 2
     },
     "MT-D0421F19": {
       "id": "MT-D0421F19",
@@ -1679,9 +1679,9 @@
       "cli_version": "v0.6.0",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.12",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:34Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:35Z",
+      "retry_count": 2
     },
     "MT-D713BBE3": {
       "id": "MT-D713BBE3",
@@ -1855,9 +1855,9 @@
       "cli_version": "v0.5.3",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.11",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:30Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:35Z",
+      "retry_count": 2
     },
     "MT-E905248B": {
       "id": "MT-E905248B",
