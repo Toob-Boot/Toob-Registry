@@ -28,3 +28,4 @@ edge_unattended_mode = true
 backoff_base_s = 10
 wdt_timeout_ms = 5000
 
+# Triggering CI sync
