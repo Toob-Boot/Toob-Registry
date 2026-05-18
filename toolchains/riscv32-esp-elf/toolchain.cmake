@@ -59,6 +59,8 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set(CMAKE_C_COMPILER_WORKS TRUE)
 set(CMAKE_ASM_COMPILER_WORKS TRUE)
 set(CMAKE_CXX_COMPILER_WORKS TRUE)
+set(CMAKE_C_COMPILER_FORCED TRUE)
+set(CMAKE_CXX_COMPILER_FORCED TRUE)
 
 # ------------------------------------------------------------------------------
 # 3. Hardware-Spezifische CPU-Flags
