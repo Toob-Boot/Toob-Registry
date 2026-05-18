@@ -601,9 +601,9 @@
       "cli_version": "v0.0.13",
       "core_version": "v0.0.1",
       "compiler_version": "v0.1.2",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:27Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:33Z",
+      "retry_count": 2
     },
     "MT-4C6DCE12": {
       "id": "MT-4C6DCE12",
@@ -612,9 +612,9 @@
       "cli_version": "v0.6.0",
       "core_version": "v0.0.1",
       "compiler_version": "v1.1.11",
-      "status": "INFRA_ERROR",
-      "last_tested": "2026-05-18T19:44:30Z",
-      "retry_count": 1
+      "status": "FATAL_INFRA_ERROR",
+      "last_tested": "2026-05-18T22:44:33Z",
+      "retry_count": 2
     },
     "MT-4D503C62": {
       "id": "MT-4D503C62",
